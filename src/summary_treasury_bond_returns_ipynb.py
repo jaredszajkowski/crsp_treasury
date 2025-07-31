@@ -4,18 +4,14 @@
 """
 
 # %%
-import sys
 from pathlib import Path
-
-sys.path.insert(0, "../../src")
-sys.path.insert(0, "./src")
 
 import calc_treasury_bond_returns
 import pandas as pd
 
 # import polars as pl
-from he_kelly_manela import pull_he_kelly_manela
-from settings import config
+import pull_he_kelly_manela
+from chartbase.settings import config
 
 DATA_DIR = Path(config("DATA_DIR"))
 
@@ -79,7 +75,7 @@ This cleaning process ensures a high-quality dataset for analyzing Treasury bond
 
 # %%
 hkm = pull_he_kelly_manela.load_he_kelly_manela_all(
-    data_dir=DATA_DIR / "he_kelly_manela"
+    data_dir=DATA_DIR
 )
 treas_hkm = hkm.iloc[:, 34:44].copy()
 treas_hkm["yyyymm"] = hkm["yyyymm"]
@@ -90,7 +86,7 @@ treas_hkm.isnull().sum()
 
 # %%
 treas_bond_returns = calc_treasury_bond_returns.calc_returns(
-    data_dir=DATA_DIR / "us_treasury_returns"
+    data_dir=DATA_DIR
 )
 
 # %%

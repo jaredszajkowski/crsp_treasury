@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 from pull_CRSP_treasury import load_CRSP_treasury_consolidated
-from settings import config
+from chartbase.settings import config
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 

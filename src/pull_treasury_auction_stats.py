@@ -174,10 +174,7 @@ Metadata:
 - updatedTimestamp: Timestamp of last update
 """
 
-import sys
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import json
 import urllib.request
@@ -185,7 +182,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from settings import config
+from chartbase.settings import config
 
 DATA_DIR = Path(config("DATA_DIR"))
 

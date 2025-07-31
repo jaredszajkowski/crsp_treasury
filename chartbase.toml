@@ -1,0 +1,53 @@
+[config]
+type = "pipeline"
+chartbase_format_version = "0.2.17"
+
+[site]
+title = "CRSP Treasury"
+author = "Jeremy Bejarano"
+copyright = "2025"
+logo_path = "./docs_src/logo.png"
+favicon_path = ""
+
+[pipeline]
+id = "crsp_treasury"
+pipeline_name = "CRSP Treasury"
+pipeline_description = "Treasury Securities Data from CRSP"
+lead_pipeline_developer = "Jeremiah Bejarano"
+contributors = ["Jeremiah Bejarano"]
+software_modules_command = "module load anaconda3/3.11.4 TeXLive/2023 R/4.4.0 pandoc/3.1.6 gcc/14.1.0 stata/17"
+runs_on_grid_or_windows_or_other = "Windows/Linux/MacOS"
+git_repo_URL = "https://repository.ofr.treas.gov/projects/RAC/repos/crsp_treasury/browse"
+README_file_path = "./README.md"
+
+[notebooks]
+
+[notebooks.summary_treasury_bond_returns_ipynb]
+notebook_name = "summary_treasury_bond_returns_ipynb"
+notebook_description = "summary_treasury_bond_returns_ipynb"
+notebook_path = "_output/_notebook_build/summary_treasury_bond_returns_ipynb.ipynb"
+is_publishable = true
+
+[charts]
+
+[dataframes]
+
+[dataframes.treasuries_with_run_status]
+dataframe_name = "treasuries_with_run_status"
+short_description_df = "treasuries_with_run_status"
+data_sources = ["crsp",]
+data_providers = ["WRDS"]
+need_to_contact_provider = ["no"]
+data_on_pre_approved_list = ["No"]
+links_to_data_providers = [""]
+topic_tags = ["treasuries"]
+type_of_data_access = ["WRDS"]
+data_license = "Yes"
+license_expiration_date = ""
+provider_contact_info = ""
+restriction_on_use = "Yes"
+how_is_pulled = "Web API via Python"
+path_to_parquet_data = "./_data/treasuries_with_run_status.parquet"
+path_to_excel_data = ""
+date_col = "caldt"
+path_to_dataframe_doc = "./docs_src/treasuries_with_run_status.md"

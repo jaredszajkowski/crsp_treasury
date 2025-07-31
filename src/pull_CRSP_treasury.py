@@ -24,10 +24,7 @@ Data Description:
 Thank you to Younghun Lee for preparing this script for use in class.
 """
 
-import sys
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from datetime import datetime
 from pathlib import Path
@@ -35,7 +32,7 @@ from pathlib import Path
 import pandas as pd
 import wrds
 
-from settings import config
+from chartbase.settings import config
 
 DATA_DIR = Path(config("DATA_DIR"))
 WRDS_USERNAME = config("WRDS_USERNAME")
