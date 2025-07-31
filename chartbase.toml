@@ -32,9 +32,9 @@ is_publishable = true
 
 [dataframes]
 
-[dataframes.treasuries_with_run_status]
-dataframe_name = "treasuries_with_run_status"
-short_description_df = "treasuries_with_run_status"
+[dataframes.CRSP_TFZ_with_runness]
+dataframe_name = "CRSP_TFZ_with_runness"
+short_description_df = "CRSP_TFZ_with_runness"
 data_sources = ["crsp",]
 data_providers = ["WRDS"]
 need_to_contact_provider = ["no"]
@@ -47,7 +47,7 @@ license_expiration_date = ""
 provider_contact_info = ""
 restriction_on_use = "Yes"
 how_is_pulled = "Web API via Python"
-path_to_parquet_data = "./_data/treasuries_with_run_status.parquet"
+path_to_parquet_data = "./_data/CRSP_TFZ_with_runness.parquet"
 path_to_excel_data = ""
 date_col = "caldt"
-path_to_dataframe_doc = "./docs_src/treasuries_with_run_status.md"
+path_to_dataframe_doc = "./docs_src/CRSP_TFZ_with_runness.md"
