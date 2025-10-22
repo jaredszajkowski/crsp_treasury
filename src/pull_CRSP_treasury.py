@@ -69,7 +69,7 @@ def pull_CRSP_treasury_daily(
         - tdask: Daily ask price (clean)
         - tdaccint: Daily series of total accrued interest
         - tdyld: Daily series of promised daily yield
-        - price: Calculated as ((tdbid + tdask) / 2.0 + tdaccint), the dirty price
+        - price_dirty: Calculated as ((tdbid + tdask) / 2.0 + tdaccint), the dirty price (NULL accrued interest defaults to 0)
         - tdduratn: Duration (price sensitivity to yield changes)
         - tdretnua: Unadjusted return (use as holding period return)
         - tdpubout: Publicly Held Face Value Outstanding integer
@@ -87,23 +87,26 @@ def pull_CRSP_treasury_daily(
     - pdint: Interest Paid on the interest payment date
     """
     query = f"""
-    SELECT 
+    SELECT
         kytreasno, kycrspid, caldt, tdbid, tdask, tdaccint, tdyld,
-        ((tdbid + tdask) / 2.0 + tdaccint) AS price,
-        tdduratn, 
+        tdduratn,
         tdretnua,
         tdpubout,
         tdtotout,
         tdpdint
-    FROM 
+    FROM
         crspm.tfz_dly
-    WHERE 
+    WHERE
         caldt BETWEEN '{start_date}' AND '{end_date}'
     """
 
     db = wrds.Connection(wrds_username=wrds_username)
     df = db.raw_sql(query, date_cols=["caldt"])
     db.close()
+
+    # Calculate dirty price in pandas, defaulting NULL accrued interest to 0
+    df['price_dirty'] = (df['tdbid'] + df['tdask']) / 2.0 + df['tdaccint'].fillna(0)
+
     return df
 
 
@@ -250,7 +253,7 @@ def pull_CRSP_treasury_consolidated(
         - tdask: Ask price (clean)
         - tdaccint: Accrued interest since last coupon
         - tdyld: Bond equivalent yield
-        - price: Dirty price (clean price + accrued interest)
+        - price_dirty: Dirty price (clean price + accrued interest, NULL accrued interest defaults to 0)
 
         Outstanding Amount Fields:
         - tdpubout: Publicly held face value outstanding (in millions of dollars)
@@ -307,7 +310,7 @@ def pull_CRSP_treasury_consolidated(
     """
 
     query = f"""
-    SELECT 
+    SELECT
         tfz.kytreasno, tfz.kycrspid, iss.tcusip,
         tfz.caldt,
         iss.tdatdt,
@@ -317,7 +320,6 @@ def pull_CRSP_treasury_consolidated(
         tfz.tdask,
         tfz.tdaccint,
         tfz.tdyld,
-        ((tfz.tdbid + tfz.tdask) / 2.0 + tfz.tdaccint) AS price,
         tfz.tdpubout,
         tfz.tdtotout,
         tfz.tdpdint,
@@ -327,15 +329,15 @@ def pull_CRSP_treasury_consolidated(
         ROUND((iss.tmatdt - tfz.caldt) / 365.0) AS years_to_maturity,
         tfz.tdduratn,
         tfz.tdretnua
-    FROM 
+    FROM
         crspm.tfz_dly AS tfz
-    LEFT JOIN 
-        crspm.tfz_iss AS iss 
-    ON 
-        tfz.kytreasno = iss.kytreasno AND 
+    LEFT JOIN
+        crspm.tfz_iss AS iss
+    ON
+        tfz.kytreasno = iss.kytreasno AND
         tfz.kycrspid = iss.kycrspid
-    WHERE 
-        tfz.caldt BETWEEN '{start_date}' AND '{end_date}' AND 
+    WHERE
+        tfz.caldt BETWEEN '{start_date}' AND '{end_date}' AND
         iss.itype IN (1, 2)
     """
 
@@ -344,6 +346,10 @@ def pull_CRSP_treasury_consolidated(
     df["days_to_maturity"] = (df["tmatdt"] - df["caldt"]).dt.days
     df["tfcaldt"] = pd.to_datetime(df["tfcaldt"]).fillna(pd.Timestamp(0))
     df["callable"] = df["tfcaldt"] != pd.Timestamp(0)
+
+    # Calculate dirty price in pandas, defaulting NULL accrued interest to 0
+    df['price_dirty'] = (df['tdbid'] + df['tdask']) / 2.0 + df['tdaccint'].fillna(0)
+
     db.close()
     df = df.reset_index(drop=True)
     return df
