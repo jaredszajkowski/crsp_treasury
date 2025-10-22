@@ -34,19 +34,19 @@ is_publishable = true
 
 [dataframes.CRSP_TFZ_with_runness]
 dataframe_name = "CRSP_TFZ_with_runness"
-short_description_df = "CRSP_TFZ_with_runness"
-data_sources = ["crsp",]
-data_providers = ["WRDS"]
+short_description_df = "CRSP Treasury data with auction-based runness calculations"
+data_sources = ["crsp", "treasury_auction_stats"]
+data_providers = ["WRDS", "TreasuryDirect"]
 need_to_contact_provider = ["no"]
 data_on_pre_approved_list = ["No"]
 links_to_data_providers = [""]
 topic_tags = ["treasuries"]
-type_of_data_access = ["WRDS"]
+type_of_data_access = ["WRDS", "Web API"]
 data_license = "Yes"
 license_expiration_date = ""
 provider_contact_info = ""
 restriction_on_use = "Yes"
-how_is_pulled = "Web API via Python"
+how_is_pulled = "CRSP via WRDS API, runness from TreasuryDirect auction data merged by CUSIP and date"
 path_to_parquet_data = "./_data/CRSP_TFZ_with_runness.parquet"
 path_to_excel_data = ""
 date_col = "caldt"

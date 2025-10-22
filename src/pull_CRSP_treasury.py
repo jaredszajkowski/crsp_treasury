@@ -158,61 +158,6 @@ def pull_CRSP_treasury_info(wrds_username=WRDS_USERNAME):
     return df
 
 
-def calc_runness(data):
-    """Calculate the 'runness' measure for Treasury securities.
-
-    'Runness' refers to how recently a Treasury security was issued relative to
-    other securities with similar maturities. This is important because the most
-    recently issued securities ('on-the-run') often trade at a premium compared
-    to older issues ('off-the-run') due to their higher liquidity.
-
-    This function calculates the runness ranking, where:
-    - 0 = on-the-run (most recently issued)
-    - 1 = first off-the-run
-    - 2 = second off-the-run
-    - etc.
-
-    The calculation follows Gurkaynak, Sack, and Wright (2007) methodology:
-    - Security runness is calculated for securities issued in 1980 or later
-    - For each date and original maturity, securities are ranked by issue date
-
-    Parameters
-    ----------
-    data : pd.DataFrame
-        DataFrame containing Treasury data with at least 'caldt', 'original_maturity',
-        and 'tdatdt' columns.
-
-    Returns
-    -------
-    pd.DataFrame
-        Input DataFrame with an additional 'run' column indicating the runness
-        of each security. On-the-run securities have run=0, first off-the-run
-        have run=1, etc.
-
-    Notes
-    -----
-    This is due to the following condition of Gurkaynak, Sack, and Wright (2007):
-        iv) Exclude on-the-run issues and 1st off-the-run issues
-        for 2,3,5, 7, 10, 20, 30 years securities issued in 1980 or later.
-    """
-
-    def _calc_runness(df):
-        temp = df.sort_values(by=["caldt", "original_maturity", "tdatdt"])
-        next_temp = (
-            temp.groupby(["caldt", "original_maturity"])["tdatdt"].rank(
-                method="first", ascending=False
-            )
-            - 1
-        )
-        return next_temp
-
-    data_run_ = data[data["caldt"] >= "1980"]
-    runs = _calc_runness(data_run_)
-    data["run"] = 0
-    data.loc[data_run_.index, "run"] = runs
-    return data
-
-
 def pull_CRSP_treasury_consolidated(
     start_date="1970-01-01",
     end_date=datetime.today().strftime("%Y-%m-%d"),
@@ -427,8 +372,6 @@ def _demo():
     df.info()
     df = load_CRSP_treasury_consolidated(data_dir=DATA_DIR)
     df.info()
-    df = calc_runness(df)
-    df.info()
     return df
 
 
@@ -447,8 +390,4 @@ if __name__ == "__main__":
 
     df = pull_CRSP_treasury_consolidated(wrds_username=WRDS_USERNAME)
     path = DATA_DIR / "CRSP_TFZ_consolidated.parquet"
-    df.to_parquet(path)
-
-    df = calc_runness(df)
-    path = DATA_DIR / "CRSP_TFZ_with_runness.parquet"
     df.to_parquet(path)
