@@ -12,15 +12,21 @@ import requests
 from chartbase.settings import config
 
 DATA_DIR = config("DATA_DIR")
-URL = "https://apps.olin.wustl.edu/faculty/manela/hkm/intermediarycapitalrisk/He_Kelly_Manela_Factors.zip"
+URL = "https://asafmanela.github.io/papers/hkm/intermediarycapitalrisk/He_Kelly_Manela_Factors.zip"
 
 
 def pull_he_kelly_manela(data_dir=DATA_DIR):
     """
     Download the He-Kelly-Manela factors and test portfolios data
     """
-    # DATA_DIR.mkdir(parents=True, exist_ok=True)
+    data_dir.mkdir(parents=True, exist_ok=True)
     response = requests.get(URL)
+    response.raise_for_status()  # Raise an error for bad status codes
+
+    # Check if the content is actually a zip file
+    if not response.content.startswith(b'PK'):
+        raise ValueError(f"Downloaded content is not a zip file. Got content type: {response.headers.get('content-type')}")
+
     zip_file = BytesIO(response.content)
     with zipfile.ZipFile(zip_file, "r") as zip_ref:
         zip_ref.extractall(data_dir)
@@ -50,4 +56,3 @@ def load_he_kelly_manela_all(data_dir=DATA_DIR):
 if __name__ == "__main__":
     data_dir = DATA_DIR
     pull_he_kelly_manela(data_dir=data_dir)
-    data_dir.mkdir(parents=True, exist_ok=True)
