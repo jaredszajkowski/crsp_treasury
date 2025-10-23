@@ -364,6 +364,57 @@ def load_CRSP_treasury_consolidated(data_dir=DATA_DIR, with_runness=True):
     return df
 
 
+def load_treasury_auction_with_runness(data_dir=DATA_DIR):
+    """Load treasury auction data with runness information from a Parquet file.
+
+    This dataset provides frequently-updated treasury auction statistics with runness
+    calculations, with minimal lag compared to CRSP data. It includes comprehensive
+    auction details such as bid-to-cover ratios, SOMA participation, and detailed
+    bidder information.
+
+    Parameters
+    ----------
+    data_dir : Path or str
+        Directory where the Parquet file is stored
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame containing treasury auction data with runness information.
+
+        Key columns include:
+        - cusip: Security identifier
+        - auctionDate: Date the auction was conducted
+        - issueDate: Date security is delivered
+        - maturityDate: Date security matures
+        - securityType, securityTerm, term, type: Security classifications
+        - run: Runness indicator (0=on-the-run, 1=first off-the-run, etc.)
+        - interestRate: Coupon rate
+        - totalAccepted, totalTendered: Auction amounts
+        - bidToCoverRatio: Demand indicator
+        - averageMedianYield, highYield, lowYield: Auction results
+        - somaAccepted, somaTendered, somaIncluded: Fed participation
+        - competitiveAccepted, noncompetitiveAccepted: Bidder categories
+        - And many more auction statistics
+
+        See docs_src/treasury_auction_with_runness.md for full documentation.
+
+    Notes
+    -----
+    This dataset has significant advantages for current market analysis:
+    - Updated very frequently (minimal lag)
+    - Direct from TreasuryDirect.gov
+    - Includes comprehensive auction statistics not available in CRSP
+    - Ideal for studying on-the-run dynamics and Fed participation
+
+    For historical price analysis and daily returns, use load_CRSP_treasury_consolidated()
+    instead, which has richer price data but may have a lag in updates.
+    """
+    path = data_dir / "treasury_auction_with_runness.parquet"
+    df = pd.read_parquet(path)
+    return df
+
+
 def _demo():
     DATA_DIR = Path(config("DATA_DIR")) / "us_treasury_returns"
     df = load_CRSP_treasury_daily(data_dir=DATA_DIR)

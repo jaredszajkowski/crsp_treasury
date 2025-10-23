@@ -51,3 +51,23 @@ path_to_parquet_data = "./_data/CRSP_TFZ_with_runness.parquet"
 path_to_excel_data = ""
 date_col = "caldt"
 path_to_dataframe_doc = "./docs_src/CRSP_TFZ_with_runness.md"
+
+[dataframes.treasury_auction_with_runness]
+dataframe_name = "treasury_auction_with_runness"
+short_description_df = "Treasury auction data with runness calculations (frequently updated, no CRSP lag)"
+data_sources = ["treasury_auction_stats"]
+data_providers = ["TreasuryDirect"]
+need_to_contact_provider = ["no"]
+data_on_pre_approved_list = ["No"]
+links_to_data_providers = ["https://treasurydirect.gov/TA_WS/securities/jqsearch"]
+topic_tags = ["treasuries", "auctions"]
+type_of_data_access = ["Web API"]
+data_license = "Public Domain"
+license_expiration_date = ""
+provider_contact_info = ""
+restriction_on_use = "No"
+how_is_pulled = "TreasuryDirect Web API, runness calculated from auction data and merged by CUSIP and auction date"
+path_to_parquet_data = "./_data/treasury_auction_with_runness.parquet"
+path_to_excel_data = ""
+date_col = "auctionDate"
+path_to_dataframe_doc = "./docs_src/treasury_auction_with_runness.md"

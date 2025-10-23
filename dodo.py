@@ -125,18 +125,21 @@ def task_format():
         "actions": [
             f"python ./src/calc_treasury_run_status.py",
             f"python ./src/merge_crsp_with_runness.py",
+            f"python ./src/merge_auction_with_runness.py",
             f"python ./src/create_ftsfr_datasets.py",
         ],
         "targets": [
             DATA_DIR / "issue_dates.parquet",
             DATA_DIR / "treasuries_with_run_status.parquet",
             DATA_DIR / "CRSP_TFZ_with_runness.parquet",
+            DATA_DIR / "treasury_auction_with_runness.parquet",
             DATA_DIR / "ftsfr_treas_bond_returns.parquet",
             DATA_DIR / "ftsfr_treas_bond_portfolio_returns.parquet",
         ],
         "file_dep": [
             f"./src/calc_treasury_run_status.py",
             f"./src/merge_crsp_with_runness.py",
+            f"./src/merge_auction_with_runness.py",
             f"./src/create_ftsfr_datasets.py",
         ],
         "clean": [],
