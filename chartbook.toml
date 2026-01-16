@@ -1,0 +1,72 @@
+[config]
+type = "pipeline"
+chartbook_format_version = "0.0.2"
+
+[site]
+title = "CRSP Treasury"
+author = "Jeremy Bejarano"
+copyright = "2025"
+logo_path = ""
+favicon_path = ""
+
+[pipeline]
+id = "crsp_treasury"
+pipeline_name = "CRSP Treasury"
+pipeline_description = "Treasury Securities Data from CRSP"
+lead_pipeline_developer = "Jeremiah Bejarano"
+contributors = ["Jeremiah Bejarano"]
+runs_on = "Windows/Linux/MacOS"
+git_repo_URL = "https://github.com/ftsfr/crsp_treasury"
+README_file_path = "./README.md"
+
+[notebooks]
+
+[notebooks.summary_treasury_bond_returns_ipynb]
+notebook_name = "summary_treasury_bond_returns_ipynb"
+notebook_description = "summary_treasury_bond_returns_ipynb"
+notebook_path = "_output/_notebook_build/summary_treasury_bond_returns_ipynb.ipynb"
+is_publishable = true
+
+[charts]
+
+[dataframes]
+
+[dataframes.crsp_treasury_daily]
+dataframe_name = "crsp_treasury_daily"
+short_description_df = "CRSP Treasury data with auction-based runness calculations"
+data_sources = ["crsp", "treasury_auction_stats"]
+data_providers = ["WRDS", "TreasuryDirect"]
+need_to_contact_provider = ["no"]
+data_on_pre_approved_list = ["No"]
+links_to_data_providers = [""]
+topic_tags = ["treasuries"]
+type_of_data_access = ["WRDS", "Web API"]
+data_license = "Yes"
+license_expiration_date = ""
+provider_contact_info = ""
+restriction_on_use = "Yes"
+how_is_pulled = "CRSP via WRDS API, runness from TreasuryDirect auction data merged by CUSIP and date"
+path_to_parquet_data = "./_data/crsp_treasury_daily.parquet"
+path_to_excel_data = ""
+date_col = "caldt"
+dataframe_docs_path = "./docs_src/crsp_treasury_daily.md"
+
+[dataframes.treasury_auctions]
+dataframe_name = "treasury_auctions"
+short_description_df = "Treasury auction data with runness calculations (frequently updated, no CRSP lag)"
+data_sources = ["treasury_auction_stats"]
+data_providers = ["TreasuryDirect"]
+need_to_contact_provider = ["no"]
+data_on_pre_approved_list = ["No"]
+links_to_data_providers = ["https://treasurydirect.gov/TA_WS/securities/jqsearch"]
+topic_tags = ["treasuries", "auctions"]
+type_of_data_access = ["Web API"]
+data_license = "Public Domain"
+license_expiration_date = ""
+provider_contact_info = ""
+restriction_on_use = "No"
+how_is_pulled = "TreasuryDirect Web API, runness calculated from auction data and merged by CUSIP and auction date"
+path_to_parquet_data = "./_data/treasury_auctions.parquet"
+path_to_excel_data = ""
+date_col = "auctionDate"
+dataframe_docs_path = "./docs_src/treasury_auctions.md"
