@@ -1,0 +1,13 @@
+# Paper References for CRSP Treasury Module
+
+[Fama1993]
+title = "Common risk factors in the returns on stocks and bonds"
+authors = "Eugene F. Fama and Kenneth R. French"
+year = 1993
+journal = "Journal of Financial Economics"
+description = "The paper identifies common risk factors in Treasury bond returns."
+empirical_facts = [
+    "Two bond-market factors related to maturity and default risks explain common variation in bond returns.",
+    "The TERM factor (long-term minus short-term government bonds) captures maturity risk.",
+]
+data_sources = ["CRSP Treasury Database"]

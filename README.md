@@ -43,3 +43,16 @@ WRDS_USERNAME=your_wrds_username
 - Python 3.10+
 - WRDS account (for CRSP data access)
 - See `requirements.txt` for Python package dependencies
+
+## Academic References
+
+### Primary Paper
+
+- **Fama and French (1993)** - "Common risk factors in the returns on stocks and bonds"
+  - Journal of Financial Economics
+  - Uses Treasury returns for TERM factor construction
+
+### Key Features
+
+- On-the-run/off-the-run status calculated from TreasuryDirect auction data
+- Maturity-sorted portfolios for term structure analysis
