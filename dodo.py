@@ -191,6 +191,23 @@ def task_run_notebooks():
 # fmt: on
 
 
+def task_generate_charts():
+    """Generate interactive HTML charts."""
+    return {
+        "actions": ["python src/generate_chart.py"],
+        "file_dep": [
+            "src/generate_chart.py",
+            DATA_DIR / "ftsfr_treas_bond_portfolio_returns.parquet",
+        ],
+        "targets": [
+            OUTPUT_DIR / "treasury_returns_replication.html",
+            OUTPUT_DIR / "treasury_cumulative_returns.html",
+        ],
+        "verbosity": 2,
+        "task_dep": ["format"],
+    }
+
+
 def task_generate_pipeline_site():
     return {
         "actions": [
@@ -198,5 +215,11 @@ def task_generate_pipeline_site():
             "chartbook build -f",
         ],
         "targets": ["docs/index.html"],
-        "file_dep": ["chartbook.toml", *notebook_files],
+        "file_dep": [
+            "chartbook.toml",
+            *notebook_files,
+            OUTPUT_DIR / "treasury_returns_replication.html",
+            OUTPUT_DIR / "treasury_cumulative_returns.html",
+        ],
+        "task_dep": ["run_notebooks", "generate_charts"],
     }
