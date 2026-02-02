@@ -122,9 +122,9 @@ def merge_auction_with_runness(data_dir=DATA_DIR):
     n_missing = merged_df["run"].isna().sum()
     if n_missing > 0:
         print(
-            f"  Warning: {n_missing:,} records ({n_missing/len(merged_df)*100:.1f}%) have no runness data"
+            f"  Warning: {n_missing:,} records ({n_missing / len(merged_df) * 100:.1f}%) have no runness data"
         )
-        print(f"  Assigning run=0 to these securities")
+        print("  Assigning run=0 to these securities")
         merged_df["run"] = merged_df["run"].fillna(0).astype(int)
     else:
         merged_df["run"] = merged_df["run"].astype(int)

@@ -33,7 +33,6 @@ for each term/type combination.
 """
 
 import sys
-import warnings
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))

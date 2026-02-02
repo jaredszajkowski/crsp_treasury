@@ -25,7 +25,6 @@ Thank you to Younghun Lee for preparing this script for use in class.
 """
 
 from datetime import datetime
-from pathlib import Path
 
 import chartbook
 import pandas as pd
@@ -103,7 +102,7 @@ def pull_CRSP_treasury_daily(
     db.close()
 
     # Calculate dirty price in pandas, defaulting NULL accrued interest to 0
-    df['price_dirty'] = (df['tdbid'] + df['tdask']) / 2.0 + df['tdaccint'].fillna(0)
+    df["price_dirty"] = (df["tdbid"] + df["tdask"]) / 2.0 + df["tdaccint"].fillna(0)
 
     return df
 
@@ -291,7 +290,7 @@ def pull_CRSP_treasury_consolidated(
     df["callable"] = df["tfcaldt"] != pd.Timestamp(0)
 
     # Calculate dirty price in pandas, defaulting NULL accrued interest to 0
-    df['price_dirty'] = (df['tdbid'] + df['tdask']) / 2.0 + df['tdaccint'].fillna(0)
+    df["price_dirty"] = (df["tdbid"] + df["tdask"]) / 2.0 + df["tdaccint"].fillna(0)
 
     db.close()
     df = df.reset_index(drop=True)

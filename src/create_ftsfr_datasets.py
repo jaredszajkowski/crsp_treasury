@@ -10,7 +10,6 @@ List of datasets:
 
 import calc_treasury_bond_returns
 import chartbook
-import pandas as pd
 import pull_CRSP_treasury
 
 BASE_DIR = chartbook.env.get_project_root()

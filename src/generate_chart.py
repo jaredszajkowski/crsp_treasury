@@ -2,7 +2,6 @@
 
 import pandas as pd
 import plotly.express as px
-import os
 from pathlib import Path
 
 # Get the project root (one level up from src/)
@@ -23,18 +22,11 @@ def generate_treasury_returns_chart():
         y="y",
         color="unique_id",
         title="Treasury Bond Portfolio Returns",
-        labels={
-            "ds": "Date",
-            "y": "Return",
-            "unique_id": "Portfolio"
-        }
+        labels={"ds": "Date", "y": "Return", "unique_id": "Portfolio"},
     )
 
     # Update layout
-    fig.update_layout(
-        template="plotly_white",
-        hovermode="x unified"
-    )
+    fig.update_layout(template="plotly_white", hovermode="x unified")
 
     # Ensure output directory exists
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -53,8 +45,8 @@ def generate_treasury_cumulative_returns_chart():
     df = pd.read_parquet(DATA_DIR / "ftsfr_treas_bond_portfolio_returns.parquet")
 
     # Calculate cumulative returns
-    df = df.sort_values(['unique_id', 'ds'])
-    df['cumulative'] = df.groupby('unique_id')['y'].transform(
+    df = df.sort_values(["unique_id", "ds"])
+    df["cumulative"] = df.groupby("unique_id")["y"].transform(
         lambda x: (1 + x).cumprod()
     )
 
@@ -68,16 +60,12 @@ def generate_treasury_cumulative_returns_chart():
         labels={
             "ds": "Date",
             "cumulative": "Cumulative Return (Growth of $1)",
-            "unique_id": "Portfolio"
-        }
+            "unique_id": "Portfolio",
+        },
     )
 
     # Update layout
-    fig.update_layout(
-        template="plotly_white",
-        hovermode="x unified",
-        yaxis_type="log"
-    )
+    fig.update_layout(template="plotly_white", hovermode="x unified", yaxis_type="log")
 
     # Ensure output directory exists
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)

@@ -33,6 +33,9 @@ def jupyter_to_python(notebook_path, notebook, build_dir):
 def jupyter_clear_output(notebook_path):
     """Clear the output of a notebook"""
     return f"jupyter nbconvert --ClearOutputPreprocessor.enabled=True --ClearMetadataPreprocessor.enabled=True --inplace {notebook_path}"
+def jupytext_to_notebook(pyfile_path, notebook_path):
+    """Convert a Python script to a Jupyter notebook using jupytext."""
+    return f"jupytext --to notebook --output {notebook_path} {pyfile_path}"
 # fmt: on
 
 
@@ -83,8 +86,8 @@ def task_pull():
     """ """
     return {
         "actions": [
-            f"python ./src/pull_treasury_auction_stats.py",
-            f"python ./src/pull_CRSP_treasury.py",
+            "python ./src/pull_treasury_auction_stats.py",
+            "python ./src/pull_CRSP_treasury.py",
         ],
         "targets": [
             DATA_DIR / "treasury_auction_stats.parquet",
@@ -93,17 +96,18 @@ def task_pull():
             DATA_DIR / "CRSP_TFZ_consolidated.parquet",
         ],
         "file_dep": [
-            f"./src/pull_treasury_auction_stats.py",
-            f"./src/pull_CRSP_treasury.py",
+            "./src/pull_treasury_auction_stats.py",
+            "./src/pull_CRSP_treasury.py",
         ],
         "clean": [],
     }
+
 
 def task_pull_hkm():
     """ """
     return {
         "actions": [
-            f"python ./src/pull_he_kelly_manela.py",
+            "python ./src/pull_he_kelly_manela.py",
         ],
         "targets": [
             DATA_DIR / "He_Kelly_Manela_Factors_monthly.csv",
@@ -111,7 +115,7 @@ def task_pull_hkm():
             DATA_DIR / "He_Kelly_Manela_Factors_And_Test_Assets_monthly.csv",
         ],
         "file_dep": [
-            f"./src/pull_he_kelly_manela.py",
+            "./src/pull_he_kelly_manela.py",
         ],
         "clean": [],
     }
@@ -121,10 +125,10 @@ def task_format():
     """ """
     return {
         "actions": [
-            f"python ./src/calc_treasury_run_status.py",
-            f"python ./src/merge_crsp_with_runness.py",
-            f"python ./src/merge_auction_with_runness.py",
-            f"python ./src/create_ftsfr_datasets.py",
+            "python ./src/calc_treasury_run_status.py",
+            "python ./src/merge_crsp_with_runness.py",
+            "python ./src/merge_auction_with_runness.py",
+            "python ./src/create_ftsfr_datasets.py",
         ],
         "targets": [
             DATA_DIR / "issue_dates.parquet",
@@ -135,10 +139,10 @@ def task_format():
             DATA_DIR / "ftsfr_treas_bond_portfolio_returns.parquet",
         ],
         "file_dep": [
-            f"./src/calc_treasury_run_status.py",
-            f"./src/merge_crsp_with_runness.py",
-            f"./src/merge_auction_with_runness.py",
-            f"./src/create_ftsfr_datasets.py",
+            "./src/calc_treasury_run_status.py",
+            "./src/merge_crsp_with_runness.py",
+            "./src/merge_auction_with_runness.py",
+            "./src/create_ftsfr_datasets.py",
         ],
         "clean": [],
     }
@@ -159,34 +163,35 @@ for notebook in notebook_tasks.keys():
 
 # fmt: off
 def task_run_notebooks():
-    """Preps the notebooks for presentation format.
-    Execute notebooks if the script version of it has been changed.
+    """Convert, execute, and export notebooks to HTML.
+
+    Uses jupytext to convert .py files to .ipynb, then executes and exports to HTML.
     """
 
     for notebook in notebook_tasks.keys():
         pyfile_path = Path(notebook_tasks[notebook]["path"])
+        # Create notebook in src/ directory (same as .py file) so imports work
         notebook_path = pyfile_path.with_suffix(".ipynb")
-        notebook_stem = pyfile_path.stem  # Get the actual filename without extension
+        output_notebook_path = OUTPUT_DIR / "_notebook_build" / f"{notebook}.ipynb"
         yield {
             "name": notebook,
             "actions": [
-                """python -c "import sys; from datetime import datetime; print(f'Start """ + notebook + """: {datetime.now()}', file=sys.stderr)" """,
-                f"ipynb-py-convert {pyfile_path} {notebook_path}",
+                jupytext_to_notebook(pyfile_path, notebook_path),
                 jupyter_execute_notebook(notebook_path),
-                jupyter_to_html(notebook_path),
-                mv(notebook_path, OUTPUT_DIR),
-                """python -c "import sys; from datetime import datetime; print(f'End """ + notebook + """: {datetime.now()}', file=sys.stderr)" """,
+                f"mkdir -p {OUTPUT_DIR / '_notebook_build'}",
+                f"mv {notebook_path} {output_notebook_path}",
+                jupyter_to_html(output_notebook_path),
             ],
             "file_dep": [
                 pyfile_path,
                 *notebook_tasks[notebook]["file_dep"],
             ],
             "targets": [
-                OUTPUT_DIR / f"{notebook_stem}.html",  # Use the actual filename stem
+                OUTPUT_DIR / f"{notebook}.html",
                 *notebook_tasks[notebook]["targets"],
             ],
             "clean": True,
-            # "verbosity": 1,
+            "verbosity": 2,
         }
 # fmt: on
 

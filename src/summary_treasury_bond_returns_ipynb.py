@@ -1,7 +1,19 @@
-# %%
-"""
-# Cleaning Summary: Treasury Bond Returns
-"""
+# ---
+# jupyter:
+#   jupytext:
+#     text_representation:
+#       extension: .py
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.18.1
+#   kernelspec:
+#     display_name: Python 3
+#     language: python
+#     name: python3
+# ---
+
+# %% [markdown]
+# # Cleaning Summary: Treasury Bond Returns
 
 # %%
 import calc_treasury_bond_returns
@@ -14,68 +26,64 @@ import pull_he_kelly_manela
 BASE_DIR = chartbook.env.get_project_root()
 DATA_DIR = BASE_DIR / "_data"
 
-# %%
-"""
-# Treasury Bond Returns Summary
-
-By leveraging the TRACE dataset from openbondassetpricing.com, the FTSFR dataset ensures a robust foundation for analyzing treasury bond returns, adhering to established methodologies and incorporating comprehensive data cleaning procedures.
-
-## Data Cleaning and Construction
-
-The treasury bond returns dataset is constructed using the following cleaning and processing steps:
-
-### 1. Bond Selection Criteria
-
-* **CUSIP Filtering**:
-  * Only include bonds with CUSIPs starting with '91' (indicating Treasury securities)
-  * This ensures we're only analyzing genuine Treasury bonds
-
-### 2. Return Processing
-
-* **Return Conversion**:
-  * Convert raw returns to decimal form by dividing by 100
-  * This standardizes the return format for analysis
-
-* **Return Filtering**:
-  * Remove observations where returns exceed 50% (tr_return > 0.5)
-  * This eliminates potential data errors or extreme outliers
-
-### 3. Maturity Grouping
-
-* **Maturity Bins**:
-  * Create 10 maturity groups using 0.5-year intervals from 0 to 5 years
-  * Bins: [0.0, 0.5, 1.0, ..., 5.0]
-  * Each group represents a specific maturity range for analysis
-
-* **Group Assignment**:
-  * Assign each bond to a maturity group based on its time to maturity (tau)
-  * Drop observations with missing maturity information
-  * Convert group labels to integers for easier analysis
-
-### 4. Portfolio Construction
-
-* **Return Aggregation**:
-  * Group bonds by date and maturity group
-  * Calculate mean returns for each group
-  * This creates a time series of portfolio returns for each maturity group
-
-### 5. Data Quality Checks
-
-* **Missing Value Handling**:
-  * Remove observations with missing returns
-  * Remove observations with missing maturity group assignments
-
-* **Outlier Treatment**:
-  * Extreme returns (>50%) are filtered out
-  * This ensures the analysis focuses on normal market conditions
-
-This cleaning process ensures a high-quality dataset for analyzing Treasury bond returns across different maturity groups, facilitating comparison with the Kelly-Manzello data.
-"""
+# %% [markdown]
+# # Treasury Bond Returns Summary
+#
+# By leveraging the TRACE dataset from openbondassetpricing.com, the FTSFR dataset ensures a robust foundation for analyzing treasury bond returns, adhering to established methodologies and incorporating comprehensive data cleaning procedures.
+#
+# ## Data Cleaning and Construction
+#
+# The treasury bond returns dataset is constructed using the following cleaning and processing steps:
+#
+# ### 1. Bond Selection Criteria
+#
+# * **CUSIP Filtering**:
+#   * Only include bonds with CUSIPs starting with '91' (indicating Treasury securities)
+#   * This ensures we're only analyzing genuine Treasury bonds
+#
+# ### 2. Return Processing
+#
+# * **Return Conversion**:
+#   * Convert raw returns to decimal form by dividing by 100
+#   * This standardizes the return format for analysis
+#
+# * **Return Filtering**:
+#   * Remove observations where returns exceed 50% (tr_return > 0.5)
+#   * This eliminates potential data errors or extreme outliers
+#
+# ### 3. Maturity Grouping
+#
+# * **Maturity Bins**:
+#   * Create 10 maturity groups using 0.5-year intervals from 0 to 5 years
+#   * Bins: [0.0, 0.5, 1.0, ..., 5.0]
+#   * Each group represents a specific maturity range for analysis
+#
+# * **Group Assignment**:
+#   * Assign each bond to a maturity group based on its time to maturity (tau)
+#   * Drop observations with missing maturity information
+#   * Convert group labels to integers for easier analysis
+#
+# ### 4. Portfolio Construction
+#
+# * **Return Aggregation**:
+#   * Group bonds by date and maturity group
+#   * Calculate mean returns for each group
+#   * This creates a time series of portfolio returns for each maturity group
+#
+# ### 5. Data Quality Checks
+#
+# * **Missing Value Handling**:
+#   * Remove observations with missing returns
+#   * Remove observations with missing maturity group assignments
+#
+# * **Outlier Treatment**:
+#   * Extreme returns (>50%) are filtered out
+#   * This ensures the analysis focuses on normal market conditions
+#
+# This cleaning process ensures a high-quality dataset for analyzing Treasury bond returns across different maturity groups, facilitating comparison with the Kelly-Manzello data.
 
 # %%
-hkm = pull_he_kelly_manela.load_he_kelly_manela_all(
-    data_dir=DATA_DIR
-)
+hkm = pull_he_kelly_manela.load_he_kelly_manela_all(data_dir=DATA_DIR)
 treas_hkm = hkm.iloc[:, 34:44].copy()
 treas_hkm["yyyymm"] = hkm["yyyymm"]
 treas_hkm.head()
@@ -84,17 +92,13 @@ treas_hkm.describe()
 treas_hkm.isnull().sum()
 
 # %%
-treas_bond_returns = calc_treasury_bond_returns.calc_returns(
-    data_dir=DATA_DIR
-)
+treas_bond_returns = calc_treasury_bond_returns.calc_returns(data_dir=DATA_DIR)
 
 # %%
 treas_bond_returns.describe()
 
-# %%
-"""
-### Comparing FTSFR with He Kelly Manela 
-"""
+# %% [markdown]
+# ### Comparing FTSFR with He Kelly Manela
 
 # %%
 # Print initial data info
@@ -185,42 +189,39 @@ for i in range(10):
     corr = merged_df[col1].corr(merged_df[col2])
     print(f"Portfolio {i + 1} vs HKM {i + 1}: {corr:.4f}")
 
-# %%
-"""
----
-
-### 📈 Comparison of Treasury Bond Portfolio Returns: FTSFR Portfolios vs. HKM Portfolios
-
-The figure above compares the time-series returns of **Treasury bond portfolios**:
-
-* **Portfolios 1–10** (in blue): Portfolios constructed by **FTSFR**, where Treasury bonds are sorted by **time remaining to maturity**, in 6-month intervals:
-
-  * **Portfolio 1**: 0 to 6 months
-  * **Portfolio 2**: 6 months to 1 year
-  * **Portfolio 3**: 1 year to 1.5 years
-  * **Portfolio 4**: 1.5 to 2 years
-  * **Portfolio 5**: 2 to 2.5 years
-  * **Portfolio 6**: 2.5 to 3 years
-  * **Portfolio 7**: 3 to 3.5 years
-  * **Portfolio 8**: 3.5 to 4 years
-  * **Portfolio 9**: 4 to 4.5 years
-  * **Portfolio 10**: 4.5 to 5 years
-
-* **HKM Portfolios 1–10** (in red): Portfolios from **He, Kelly, and Manella (HKM)** using a similar 6-month maturity bucket structure for comparison.
-
----
-
-### 🔍 Observations
-
-* The returns between **FTSFR portfolios (blue)** and **HKM portfolios (red)** show **close alignment**, indicating a consistent term-structure pattern across both datasets.
-* During periods of heightened volatility—such as the **2008 financial crisis** —portfolios with longer time to maturity generally exhibit greater return sensitivity, seen consistently in both series.
-* Small return differences may result from:
-
-  * Rounding errors due to different data sources and small values.
-  * Missing values in the HKM data.
-
----
-
-This comparison confirms that the **FTSFR replication tracks** the structure and return behavior of the HKM maturity-sorted Treasury portfolios.
-
-"""
+# %% [markdown]
+# ---
+#
+# ### Comparison of Treasury Bond Portfolio Returns: FTSFR Portfolios vs. HKM Portfolios
+#
+# The figure above compares the time-series returns of **Treasury bond portfolios**:
+#
+# * **Portfolios 1-10** (in blue): Portfolios constructed by **FTSFR**, where Treasury bonds are sorted by **time remaining to maturity**, in 6-month intervals:
+#
+#   * **Portfolio 1**: 0 to 6 months
+#   * **Portfolio 2**: 6 months to 1 year
+#   * **Portfolio 3**: 1 year to 1.5 years
+#   * **Portfolio 4**: 1.5 to 2 years
+#   * **Portfolio 5**: 2 to 2.5 years
+#   * **Portfolio 6**: 2.5 to 3 years
+#   * **Portfolio 7**: 3 to 3.5 years
+#   * **Portfolio 8**: 3.5 to 4 years
+#   * **Portfolio 9**: 4 to 4.5 years
+#   * **Portfolio 10**: 4.5 to 5 years
+#
+# * **HKM Portfolios 1-10** (in red): Portfolios from **He, Kelly, and Manella (HKM)** using a similar 6-month maturity bucket structure for comparison.
+#
+# ---
+#
+# ### Observations
+#
+# * The returns between **FTSFR portfolios (blue)** and **HKM portfolios (red)** show **close alignment**, indicating a consistent term-structure pattern across both datasets.
+# * During periods of heightened volatility-such as the **2008 financial crisis** -portfolios with longer time to maturity generally exhibit greater return sensitivity, seen consistently in both series.
+# * Small return differences may result from:
+#
+#   * Rounding errors due to different data sources and small values.
+#   * Missing values in the HKM data.
+#
+# ---
+#
+# This comparison confirms that the **FTSFR replication tracks** the structure and return behavior of the HKM maturity-sorted Treasury portfolios.
