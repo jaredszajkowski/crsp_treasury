@@ -1,5 +1,6 @@
 import os
 import platform
+import shutil
 import sys
 from pathlib import Path
 
@@ -39,16 +40,17 @@ def jupytext_to_notebook(pyfile_path, notebook_path):
 # fmt: on
 
 
-def mv(from_path, to_path):
-    """Copy a notebook to a folder"""
+def mkdir_p(path):
+    """Create directory and parents if they don't exist (platform-agnostic)."""
+    Path(path).mkdir(parents=True, exist_ok=True)
+
+
+def mv_file(from_path, to_path):
+    """Move a file to a destination path using Python (platform-agnostic)."""
     from_path = Path(from_path)
     to_path = Path(to_path)
-    to_path.mkdir(parents=True, exist_ok=True)
-    if OS_TYPE == "nix":
-        command = f"mv {from_path} {to_path}"
-    else:
-        command = f"move {from_path} {to_path}"
-    return command
+    to_path.parent.mkdir(parents=True, exist_ok=True)
+    shutil.move(str(from_path), str(to_path))
 
 
 def copy_dir_contents_to_folder(dir_path, destination_folder):
@@ -73,8 +75,8 @@ def task_config():
 
     return {
         "actions": [
-            f"mkdir -p {DATA_DIR}",
-            f"mkdir -p {OUTPUT_DIR}",
+            (mkdir_p, [DATA_DIR]),
+            (mkdir_p, [OUTPUT_DIR]),
         ],
         "targets": [DATA_DIR, OUTPUT_DIR],
         "file_dep": [".env"],
@@ -178,8 +180,8 @@ def task_run_notebooks():
             "actions": [
                 jupytext_to_notebook(pyfile_path, notebook_path),
                 jupyter_execute_notebook(notebook_path),
-                f"mkdir -p {OUTPUT_DIR / '_notebook_build'}",
-                f"mv {notebook_path} {output_notebook_path}",
+                (mkdir_p, [OUTPUT_DIR / "_notebook_build"]),
+                (mv_file, [notebook_path, output_notebook_path]),
                 jupyter_to_html(output_notebook_path),
             ],
             "file_dep": [
