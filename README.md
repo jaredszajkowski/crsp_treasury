@@ -61,8 +61,10 @@ For convenience, I repeat the main steps of this interactive work here:
 ssh grid
 tmux ## use this to prevent disconnection
 cd /data/
-module use -a /opt/aws_ofropt/Modulefiles
-module load anaconda3/3.11.4 TeXLive/2023 R/4.4.0 pandoc/3.1.6 gcc/14.1.0 stata/17
+module use -a /opt/aws_ofropt/Ubuntu_Modulefiles
+module load anaconda3/3.11.4 TeXLive/2023 R/4.4.0 stata/17
+export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+export NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
 pip install -r requirements.txt ## only needs to be done once. You may optionally use venv below
 salloc --exclusive srun -X --pty bash -c 'jupyter notebook --no-browser --ip=$SLURMD_NODENAME' 
 ```
