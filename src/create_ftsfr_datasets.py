@@ -8,8 +8,9 @@ List of datasets:
 - treasury_bond_returns_long: individual treasury bond returns in long format
 """
 
-import calc_treasury_bond_returns
 import chartbook
+
+import calc_treasury_bond_returns
 import pull_CRSP_treasury
 
 BASE_DIR = chartbook.env.get_project_root()

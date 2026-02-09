@@ -1,8 +1,9 @@
 """Generate interactive HTML chart for Treasury Bond Returns."""
 
+from pathlib import Path
+
 import pandas as pd
 import plotly.express as px
-from pathlib import Path
 
 # Get the project root (one level up from src/)
 PROJECT_ROOT = Path(__file__).parent.parent

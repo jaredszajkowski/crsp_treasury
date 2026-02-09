@@ -16,9 +16,10 @@
 # # Cleaning Summary: Treasury Bond Returns
 
 # %%
-import calc_treasury_bond_returns
 import chartbook
 import pandas as pd
+
+import calc_treasury_bond_returns
 
 # import polars as pl
 import pull_he_kelly_manela
