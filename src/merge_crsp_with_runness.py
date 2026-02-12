@@ -123,7 +123,7 @@ if __name__ == "__main__":
     df = merge_crsp_with_runness(data_dir=DATA_DIR)
 
     # Save merged data
-    output_path = DATA_DIR / "crsp_treasury_daily.parquet"
+    output_path = DATA_DIR / "crsp_treasury_daily_intermediate.parquet"
     print(f"Saving to {output_path}...")
     df.to_parquet(output_path, index=False)
     print("Done!")

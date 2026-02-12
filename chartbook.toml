@@ -77,19 +77,19 @@ Cumulative return = Product of (1 + monthly return) over time
 
 [dataframes.crsp_treasury_daily]
 dataframe_name = "crsp_treasury_daily"
-short_description_df = "CRSP Treasury data with auction-based runness calculations"
-data_sources = ["crsp", "treasury_auction_stats"]
-data_providers = ["WRDS", "TreasuryDirect"]
+short_description_df = "CRSP Treasury data with auction-based runness calculations and GSW model-implied prices"
+data_sources = ["crsp", "treasury_auction_stats", "fed_yield_curve"]
+data_providers = ["WRDS", "TreasuryDirect", "Federal Reserve"]
 need_to_contact_provider = ["no"]
 data_on_pre_approved_list = ["No"]
 links_to_data_providers = [""]
 topic_tags = ["treasuries"]
-type_of_data_access = ["WRDS", "Web API"]
+type_of_data_access = ["WRDS", "Web API", "Federal Reserve CSV"]
 data_license = "Yes"
 license_expiration_date = ""
 provider_contact_info = ""
 restriction_on_use = "Yes"
-how_is_pulled = "CRSP via WRDS API, runness from TreasuryDirect auction data merged by CUSIP and date"
+how_is_pulled = "CRSP via WRDS API, runness from TreasuryDirect auction data merged by CUSIP and date, GSW model-implied prices from Fed Svensson parameters"
 path_to_parquet_data = "./_data/crsp_treasury_daily.parquet"
 path_to_excel_data = ""
 date_col = "caldt"

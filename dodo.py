@@ -85,22 +85,30 @@ def task_config():
 
 
 def task_pull():
-    """ """
-    return {
-        "actions": [
-            "python ./src/pull_treasury_auction_stats.py",
-            "python ./src/pull_CRSP_treasury.py",
-        ],
+    """Pull data from external sources."""
+    yield {
+        "name": "auction_stats",
+        "actions": ["python ./src/pull_treasury_auction_stats.py"],
+        "targets": [DATA_DIR / "treasury_auction_stats.parquet"],
+        "file_dep": ["./src/pull_treasury_auction_stats.py"],
+        "clean": [],
+    }
+    yield {
+        "name": "crsp_treasury",
+        "actions": ["python ./src/pull_CRSP_treasury.py"],
         "targets": [
-            DATA_DIR / "treasury_auction_stats.parquet",
             DATA_DIR / "CRSP_TFZ_DAILY.parquet",
             DATA_DIR / "CRSP_TFZ_INFO.parquet",
             DATA_DIR / "CRSP_TFZ_consolidated.parquet",
         ],
-        "file_dep": [
-            "./src/pull_treasury_auction_stats.py",
-            "./src/pull_CRSP_treasury.py",
-        ],
+        "file_dep": ["./src/pull_CRSP_treasury.py"],
+        "clean": [],
+    }
+    yield {
+        "name": "fed_yield_curve_params",
+        "actions": ["python ./src/pull_fed_yield_curve_params.py"],
+        "targets": [DATA_DIR / "fed_yield_curve_params.parquet"],
+        "file_dep": ["./src/pull_fed_yield_curve_params.py"],
         "clean": [],
     }
 
@@ -123,29 +131,96 @@ def task_pull_hkm():
     }
 
 
-def task_format():
-    """ """
+def task_calc_run_status():
+    """Calculate on-the-run vs off-the-run status from auction data."""
     return {
-        "actions": [
-            "python ./src/calc_treasury_run_status.py",
-            "python ./src/merge_crsp_with_runness.py",
-            "python ./src/merge_auction_with_runness.py",
-            "python ./src/create_ftsfr_datasets.py",
-        ],
+        "actions": ["python ./src/calc_treasury_run_status.py"],
         "targets": [
             DATA_DIR / "issue_dates.parquet",
             DATA_DIR / "treasuries_with_run_status.parquet",
+        ],
+        "file_dep": [
+            "./src/calc_treasury_run_status.py",
+            DATA_DIR / "treasury_auction_stats.parquet",
+        ],
+        "task_dep": ["pull"],
+        "clean": [],
+    }
+
+
+def task_merge_crsp_with_runness():
+    """Merge CRSP Treasury data with runness calculations."""
+    return {
+        "actions": ["python ./src/merge_crsp_with_runness.py"],
+        "targets": [DATA_DIR / "crsp_treasury_daily_intermediate.parquet"],
+        "file_dep": [
+            "./src/merge_crsp_with_runness.py",
+            DATA_DIR / "CRSP_TFZ_consolidated.parquet",
+            DATA_DIR / "treasuries_with_run_status.parquet",
+        ],
+        "clean": [],
+    }
+
+
+def task_merge_auction_with_runness():
+    """Merge Treasury auction data with runness calculations."""
+    return {
+        "actions": ["python ./src/merge_auction_with_runness.py"],
+        "targets": [DATA_DIR / "treasury_auctions.parquet"],
+        "file_dep": [
+            "./src/merge_auction_with_runness.py",
+            DATA_DIR / "treasury_auction_stats.parquet",
+            DATA_DIR / "treasuries_with_run_status.parquet",
+        ],
+        "clean": [],
+    }
+
+
+def task_calc_gsw_prices():
+    """Calculate GSW model-implied prices and YTM."""
+    return {
+        "actions": ["python ./src/calc_gsw_prices.py"],
+        "targets": [DATA_DIR / "crsp_treasury_daily.parquet"],
+        "file_dep": [
+            "./src/calc_gsw_prices.py",
+            DATA_DIR / "crsp_treasury_daily_intermediate.parquet",
+            DATA_DIR / "fed_yield_curve_params.parquet",
+        ],
+        "clean": [],
+    }
+
+
+def task_test():
+    """Run GSW pricing sanity checks via pytest."""
+    return {
+        "actions": [
+            "python -m pytest ./src/test_gsw_sanity.py -v --tb=short "
+            f"--junitxml={OUTPUT_DIR / 'test_gsw_sanity.xml'}",
+        ],
+        "targets": [OUTPUT_DIR / "test_gsw_sanity.xml"],
+        "file_dep": [
+            "./src/test_gsw_sanity.py",
             DATA_DIR / "crsp_treasury_daily.parquet",
-            DATA_DIR / "treasury_auctions.parquet",
+        ],
+        "clean": True,
+        "verbosity": 2,
+    }
+
+
+def task_create_ftsfr_datasets():
+    """Create FTSFR datasets in long format."""
+    return {
+        "actions": ["python ./src/create_ftsfr_datasets.py"],
+        "targets": [
             DATA_DIR / "ftsfr_treas_bond_returns.parquet",
             DATA_DIR / "ftsfr_treas_bond_portfolio_returns.parquet",
         ],
         "file_dep": [
-            "./src/calc_treasury_run_status.py",
-            "./src/merge_crsp_with_runness.py",
-            "./src/merge_auction_with_runness.py",
             "./src/create_ftsfr_datasets.py",
+            "./src/calc_treasury_bond_returns.py",
+            DATA_DIR / "CRSP_TFZ_consolidated.parquet",
         ],
+        "task_dep": ["pull"],
         "clean": [],
     }
 
@@ -211,7 +286,7 @@ def task_generate_charts():
             OUTPUT_DIR / "treasury_cumulative_returns.html",
         ],
         "verbosity": 2,
-        "task_dep": ["format"],
+        "task_dep": ["create_ftsfr_datasets"],
     }
 
 
