@@ -1,4 +1,6 @@
 import os
+import platform
+import shutil
 import sys
 from pathlib import Path
 
@@ -12,7 +14,7 @@ except ImportError:
 DATA_DIR = Path(config("DATA_DIR"))
 OUTPUT_DIR = Path(config("OUTPUT_DIR"))
 BASE_DIR = Path(config("BASE_DIR"))
-OS_TYPE = config("OS_TYPE")
+OS_TYPE = "nix" if platform.system() != "Windows" else "windows"
 
 
 ## Helpers for handling Jupyter Notebook tasks
@@ -35,19 +37,23 @@ def jupyter_to_python(notebook_path, notebook, build_dir):
 def jupyter_clear_output(notebook_path):
     """Clear the output of a notebook"""
     return f"jupyter nbconvert --ClearOutputPreprocessor.enabled=True --ClearMetadataPreprocessor.enabled=True --inplace {notebook_path}"
+def jupytext_to_notebook(pyfile_path, notebook_path):
+    """Convert a Python script to a Jupyter notebook using jupytext."""
+    return f"jupytext --to notebook --output {notebook_path} {pyfile_path}"
 # fmt: on
 
 
-def mv(from_path, to_path):
-    """Copy a notebook to a folder"""
+def mkdir_p(path):
+    """Create directory and parents if they don't exist (platform-agnostic)."""
+    Path(path).mkdir(parents=True, exist_ok=True)
+
+
+def mv_file(from_path, to_path):
+    """Move a file to a destination path using Python (platform-agnostic)."""
     from_path = Path(from_path)
     to_path = Path(to_path)
-    to_path.mkdir(parents=True, exist_ok=True)
-    if OS_TYPE == "nix":
-        command = f"mv {from_path} {to_path}"
-    else:
-        command = f"move {from_path} {to_path}"
-    return command
+    to_path.parent.mkdir(parents=True, exist_ok=True)
+    shutil.move(str(from_path), str(to_path))
 
 
 def copy_dir_contents_to_folder(dir_path, destination_folder):
@@ -72,8 +78,8 @@ def task_config():
 
     return {
         "actions": [
-            f"mkdir -p {DATA_DIR}",
-            f"mkdir -p {OUTPUT_DIR}",
+            (mkdir_p, [DATA_DIR]),
+            (mkdir_p, [OUTPUT_DIR]),
         ],
         "targets": [DATA_DIR, OUTPUT_DIR],
         "file_dep": [".env"],
@@ -82,30 +88,39 @@ def task_config():
 
 
 def task_pull():
-    """ """
-    return {
-        "actions": [
-            f"python ./src/pull_treasury_auction_stats.py",
-            f"python ./src/pull_CRSP_treasury.py",
-        ],
+    """Pull data from external sources."""
+    yield {
+        "name": "auction_stats",
+        "actions": ["python ./src/pull_treasury_auction_stats.py"],
+        "targets": [DATA_DIR / "treasury_auction_stats.parquet"],
+        "file_dep": ["./src/pull_treasury_auction_stats.py"],
+        "clean": [],
+    }
+    yield {
+        "name": "crsp_treasury",
+        "actions": ["python ./src/pull_CRSP_treasury.py"],
         "targets": [
-            DATA_DIR / "treasury_auction_stats.parquet",
             DATA_DIR / "CRSP_TFZ_DAILY.parquet",
             DATA_DIR / "CRSP_TFZ_INFO.parquet",
             DATA_DIR / "CRSP_TFZ_consolidated.parquet",
         ],
-        "file_dep": [
-            f"./src/pull_treasury_auction_stats.py",
-            f"./src/pull_CRSP_treasury.py",
-        ],
+        "file_dep": ["./src/pull_CRSP_treasury.py"],
         "clean": [],
     }
+    yield {
+        "name": "fed_yield_curve_params",
+        "actions": ["python ./src/pull_fed_yield_curve_params.py"],
+        "targets": [DATA_DIR / "fed_yield_curve_params.parquet"],
+        "file_dep": ["./src/pull_fed_yield_curve_params.py"],
+        "clean": [],
+    }
+
 
 def task_pull_hkm():
     """ """
     return {
         "actions": [
-            f"python ./src/pull_he_kelly_manela.py",
+            "python ./src/pull_he_kelly_manela.py",
         ],
         "targets": [
             DATA_DIR / "He_Kelly_Manela_Factors_monthly.csv",
@@ -113,35 +128,102 @@ def task_pull_hkm():
             DATA_DIR / "He_Kelly_Manela_Factors_And_Test_Assets_monthly.csv",
         ],
         "file_dep": [
-            f"./src/pull_he_kelly_manela.py",
+            "./src/pull_he_kelly_manela.py",
         ],
         "clean": [],
     }
 
 
-def task_format():
-    """ """
+def task_calc_run_status():
+    """Calculate on-the-run vs off-the-run status from auction data."""
     return {
-        "actions": [
-            f"python ./src/calc_treasury_run_status.py",
-            f"python ./src/merge_crsp_with_runness.py",
-            f"python ./src/merge_auction_with_runness.py",
-            f"python ./src/create_ftsfr_datasets.py",
-        ],
+        "actions": ["python ./src/calc_treasury_run_status.py"],
         "targets": [
             DATA_DIR / "issue_dates.parquet",
             DATA_DIR / "treasuries_with_run_status.parquet",
+        ],
+        "file_dep": [
+            "./src/calc_treasury_run_status.py",
+            DATA_DIR / "treasury_auction_stats.parquet",
+        ],
+        "task_dep": ["pull"],
+        "clean": [],
+    }
+
+
+def task_merge_crsp_with_runness():
+    """Merge CRSP Treasury data with runness calculations."""
+    return {
+        "actions": ["python ./src/merge_crsp_with_runness.py"],
+        "targets": [DATA_DIR / "crsp_treasury_daily_intermediate.parquet"],
+        "file_dep": [
+            "./src/merge_crsp_with_runness.py",
+            DATA_DIR / "CRSP_TFZ_consolidated.parquet",
+            DATA_DIR / "treasuries_with_run_status.parquet",
+        ],
+        "clean": [],
+    }
+
+
+def task_merge_auction_with_runness():
+    """Merge Treasury auction data with runness calculations."""
+    return {
+        "actions": ["python ./src/merge_auction_with_runness.py"],
+        "targets": [DATA_DIR / "treasury_auction_with_runness.parquet"],
+        "file_dep": [
+            "./src/merge_auction_with_runness.py",
+            DATA_DIR / "treasury_auction_stats.parquet",
+            DATA_DIR / "treasuries_with_run_status.parquet",
+        ],
+        "clean": [],
+    }
+
+
+def task_calc_gsw_prices():
+    """Calculate GSW model-implied prices and YTM."""
+    return {
+        "actions": ["python ./src/calc_gsw_prices.py"],
+        "targets": [DATA_DIR / "CRSP_TFZ_with_runness.parquet"],
+        "file_dep": [
+            "./src/calc_gsw_prices.py",
+            DATA_DIR / "crsp_treasury_daily_intermediate.parquet",
+            DATA_DIR / "fed_yield_curve_params.parquet",
+        ],
+        "clean": [],
+    }
+
+
+def task_test_gsw():
+    """Run GSW pricing sanity checks via pytest."""
+    return {
+        "actions": [
+            "python -m pytest ./src/test_gsw_sanity.py -v --tb=short "
+            f"--junitxml={OUTPUT_DIR / 'test_gsw_sanity.xml'}",
+        ],
+        "targets": [OUTPUT_DIR / "test_gsw_sanity.xml"],
+        "file_dep": [
+            "./src/test_gsw_sanity.py",
             DATA_DIR / "CRSP_TFZ_with_runness.parquet",
-            DATA_DIR / "treasury_auction_with_runness.parquet",
+        ],
+        "clean": True,
+        "verbosity": 2,
+    }
+
+
+def task_create_ftsfr_datasets():
+    """Create FTSFR datasets in long format."""
+    return {
+        "actions": ["python ./src/create_ftsfr_datasets.py"],
+        "targets": [
             DATA_DIR / "ftsfr_treas_bond_returns.parquet",
             DATA_DIR / "ftsfr_treas_bond_portfolio_returns.parquet",
         ],
         "file_dep": [
-            f"./src/calc_treasury_run_status.py",
-            f"./src/merge_crsp_with_runness.py",
-            f"./src/merge_auction_with_runness.py",
-            f"./src/create_ftsfr_datasets.py",
+            "./src/create_ftsfr_datasets.py",
+            "./src/calc_treasury_bond_returns.py",
+            DATA_DIR / "CRSP_TFZ_consolidated.parquet",
         ],
+        "task_dep": ["pull"],
         "clean": [],
     }
 
@@ -161,36 +243,54 @@ for notebook in notebook_tasks.keys():
 
 # fmt: off
 def task_run_notebooks():
-    """Preps the notebooks for presentation format.
-    Execute notebooks if the script version of it has been changed.
+    """Convert, execute, and export notebooks to HTML.
+
+    Uses jupytext to convert .py files to .ipynb, then executes and exports to HTML.
     """
 
     for notebook in notebook_tasks.keys():
         pyfile_path = Path(notebook_tasks[notebook]["path"])
+        # Create notebook in src/ directory (same as .py file) so imports work
         notebook_path = pyfile_path.with_suffix(".ipynb")
-        notebook_stem = pyfile_path.stem  # Get the actual filename without extension
+        output_notebook_path = OUTPUT_DIR / "_notebook_build" / f"{notebook}.ipynb"
         yield {
             "name": notebook,
             "actions": [
-                """python -c "import sys; from datetime import datetime; print(f'Start """ + notebook + """: {datetime.now()}', file=sys.stderr)" """,
-                f"ipynb-py-convert {pyfile_path} {notebook_path}",
+                jupytext_to_notebook(pyfile_path, notebook_path),
                 jupyter_execute_notebook(notebook_path),
-                jupyter_to_html(notebook_path),
-                mv(notebook_path, OUTPUT_DIR / "_notebook_build"),
-                """python -c "import sys; from datetime import datetime; print(f'End """ + notebook + """: {datetime.now()}', file=sys.stderr)" """,
+                (mkdir_p, [OUTPUT_DIR / "_notebook_build"]),
+                (mv_file, [notebook_path, output_notebook_path]),
+                jupyter_to_html(output_notebook_path),
             ],
             "file_dep": [
                 pyfile_path,
                 *notebook_tasks[notebook]["file_dep"],
             ],
             "targets": [
-                OUTPUT_DIR / f"{notebook_stem}.html",  # Use the actual filename stem
+                OUTPUT_DIR / f"{notebook}.html",
                 *notebook_tasks[notebook]["targets"],
             ],
             "clean": True,
-            # "verbosity": 1,
+            "verbosity": 2,
         }
 # fmt: on
+
+
+def task_generate_charts():
+    """Generate interactive HTML charts."""
+    return {
+        "actions": ["python src/generate_chart.py"],
+        "file_dep": [
+            "src/generate_chart.py",
+            DATA_DIR / "ftsfr_treas_bond_portfolio_returns.parquet",
+        ],
+        "targets": [
+            OUTPUT_DIR / "treasury_returns_replication.html",
+            OUTPUT_DIR / "treasury_cumulative_returns.html",
+        ],
+        "verbosity": 2,
+        "task_dep": ["create_ftsfr_datasets"],
+    }
 
 
 def task_generate_pipeline_site():
@@ -200,5 +300,11 @@ def task_generate_pipeline_site():
             "chartbase generate -f",
         ],
         "targets": ["docs/index.html"],
-        "file_dep": ["chartbase.toml", *notebook_files],
+        "file_dep": [
+            "chartbase.toml",
+            *notebook_files,
+            OUTPUT_DIR / "treasury_returns_replication.html",
+            OUTPUT_DIR / "treasury_cumulative_returns.html",
+        ],
+        "task_dep": ["run_notebooks", "generate_charts"],
     }

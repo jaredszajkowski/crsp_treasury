@@ -174,8 +174,6 @@ Metadata:
 - updatedTimestamp: Timestamp of last update
 """
 
-from pathlib import Path
-
 import json
 import urllib.request
 from pathlib import Path

@@ -11,7 +11,7 @@ import requests
 
 from chartbase.settings import config
 
-DATA_DIR = config("DATA_DIR")
+DATA_DIR = Path(config("DATA_DIR"))
 URL = "https://asafmanela.github.io/papers/hkm/intermediarycapitalrisk/He_Kelly_Manela_Factors.zip"
 
 
@@ -24,8 +24,10 @@ def pull_he_kelly_manela(data_dir=DATA_DIR):
     response.raise_for_status()  # Raise an error for bad status codes
 
     # Check if the content is actually a zip file
-    if not response.content.startswith(b'PK'):
-        raise ValueError(f"Downloaded content is not a zip file. Got content type: {response.headers.get('content-type')}")
+    if not response.content.startswith(b"PK"):
+        raise ValueError(
+            f"Downloaded content is not a zip file. Got content type: {response.headers.get('content-type')}"
+        )
 
     zip_file = BytesIO(response.content)
     with zipfile.ZipFile(zip_file, "r") as zip_ref:

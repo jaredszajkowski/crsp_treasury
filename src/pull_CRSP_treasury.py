@@ -24,8 +24,6 @@ Data Description:
 Thank you to Younghun Lee for preparing this script for use in class.
 """
 
-from pathlib import Path
-
 from datetime import datetime
 from pathlib import Path
 
@@ -105,7 +103,7 @@ def pull_CRSP_treasury_daily(
     db.close()
 
     # Calculate dirty price in pandas, defaulting NULL accrued interest to 0
-    df['price_dirty'] = (df['tdbid'] + df['tdask']) / 2.0 + df['tdaccint'].fillna(0)
+    df["price_dirty"] = (df["tdbid"] + df["tdask"]) / 2.0 + df["tdaccint"].fillna(0)
 
     return df
 
@@ -293,7 +291,7 @@ def pull_CRSP_treasury_consolidated(
     df["callable"] = df["tfcaldt"] != pd.Timestamp(0)
 
     # Calculate dirty price in pandas, defaulting NULL accrued interest to 0
-    df['price_dirty'] = (df['tdbid'] + df['tdask']) / 2.0 + df['tdaccint'].fillna(0)
+    df["price_dirty"] = (df["tdbid"] + df["tdask"]) / 2.0 + df["tdaccint"].fillna(0)
 
     db.close()
     df = df.reset_index(drop=True)
@@ -416,12 +414,12 @@ def load_treasury_auction_with_runness(data_dir=DATA_DIR):
 
 
 def _demo():
-    DATA_DIR = Path(config("DATA_DIR")) / "us_treasury_returns"
-    df = load_CRSP_treasury_daily(data_dir=DATA_DIR)
+    demo_data_dir = Path(config("DATA_DIR")) / "us_treasury_returns"
+    df = load_CRSP_treasury_daily(data_dir=demo_data_dir)
     df.info()
-    df = load_CRSP_treasury_info(data_dir=DATA_DIR)
+    df = load_CRSP_treasury_info(data_dir=demo_data_dir)
     df.info()
-    df = load_CRSP_treasury_consolidated(data_dir=DATA_DIR)
+    df = load_CRSP_treasury_consolidated(data_dir=demo_data_dir)
     df.info()
     return df
 

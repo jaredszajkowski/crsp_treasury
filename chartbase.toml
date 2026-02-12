@@ -34,19 +34,19 @@ is_publishable = true
 
 [dataframes.CRSP_TFZ_with_runness]
 dataframe_name = "CRSP_TFZ_with_runness"
-short_description_df = "CRSP Treasury data with auction-based runness calculations"
-data_sources = ["crsp", "treasury_auction_stats"]
-data_providers = ["WRDS", "TreasuryDirect"]
+short_description_df = "CRSP Treasury data with runness and GSW model-implied prices (Svensson yield curve)"
+data_sources = ["crsp", "treasury_auction_stats", "fed_yield_curve"]
+data_providers = ["WRDS", "TreasuryDirect", "Federal Reserve"]
 need_to_contact_provider = ["no"]
 data_on_pre_approved_list = ["No"]
-links_to_data_providers = [""]
-topic_tags = ["treasuries"]
-type_of_data_access = ["WRDS", "Web API"]
+links_to_data_providers = ["https://www.federalreserve.gov/data/yield-curve-tables/feds200628.csv"]
+topic_tags = ["treasuries", "yield_curve", "gsw"]
+type_of_data_access = ["WRDS", "Web API", "CSV Download"]
 data_license = "Yes"
 license_expiration_date = ""
 provider_contact_info = ""
 restriction_on_use = "Yes"
-how_is_pulled = "CRSP via WRDS API, runness from TreasuryDirect auction data merged by CUSIP and date"
+how_is_pulled = "CRSP via WRDS API, runness from TreasuryDirect, GSW prices from Fed Svensson parameters"
 path_to_parquet_data = "./_data/CRSP_TFZ_with_runness.parquet"
 path_to_excel_data = ""
 date_col = "caldt"

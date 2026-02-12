@@ -10,7 +10,7 @@ Inputs:
     - treasuries_with_run_status.parquet: Auction-based runness calculations by date, term, and type
 
 Outputs:
-    - CRSP_TFZ_with_runness.parquet: CRSP data enriched with correct runness measures
+    - crsp_treasury_daily_intermediate.parquet: CRSP data enriched with correct runness measures
 
 The merge is performed on:
     - CUSIP (security identifier)
@@ -24,8 +24,6 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from pathlib import Path
 
 import pandas as pd
 
@@ -109,9 +107,9 @@ def merge_crsp_with_runness(data_dir=DATA_DIR):
     n_missing = merged_df["run"].isna().sum()
     if n_missing > 0:
         print(
-            f"  Warning: {n_missing:,} records ({n_missing/len(merged_df)*100:.1f}%) have no auction data"
+            f"  Warning: {n_missing:,} records ({n_missing / len(merged_df) * 100:.1f}%) have no auction data"
         )
-        print(f"  Assigning run=0 to these securities")
+        print("  Assigning run=0 to these securities")
         merged_df["run"] = merged_df["run"].fillna(0).astype(int)
     else:
         merged_df["run"] = merged_df["run"].astype(int)
@@ -125,7 +123,7 @@ if __name__ == "__main__":
     df = merge_crsp_with_runness(data_dir=DATA_DIR)
 
     # Save merged data
-    output_path = DATA_DIR / "CRSP_TFZ_with_runness.parquet"
+    output_path = DATA_DIR / "crsp_treasury_daily_intermediate.parquet"
     print(f"Saving to {output_path}...")
     df.to_parquet(output_path, index=False)
     print("Done!")

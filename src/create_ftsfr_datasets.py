@@ -8,12 +8,14 @@ List of datasets:
 - treasury_bond_returns_long: individual treasury bond returns in long format
 """
 
+from pathlib import Path
+
 import calc_treasury_bond_returns
 import pull_CRSP_treasury
-import pandas as pd
+
 from chartbase.settings import config
 
-DATA_DIR = config("DATA_DIR")
+DATA_DIR = Path(config("DATA_DIR"))
 
 # Load individual treasury bond returns
 daily_returns = pull_CRSP_treasury.load_CRSP_treasury_consolidated(

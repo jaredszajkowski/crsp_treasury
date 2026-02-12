@@ -2,20 +2,22 @@
 
 ## Overview
 
-This dataset combines comprehensive U.S. Treasury daily price and yield data from CRSP (Center for Research in Security Prices) with auction-based runness calculations. It provides a complete historical time series of Treasury securities with accurate on-the-run vs off-the-run classification.
+This dataset combines comprehensive U.S. Treasury daily price and yield data from CRSP (Center for Research in Security Prices) with auction-based runness calculations and GSW (Gurkaynak-Sack-Wright) model-implied prices. It provides a complete historical time series of Treasury securities with accurate on-the-run vs off-the-run classification and fair-value benchmarks from the Federal Reserve's Svensson yield curve model.
 
 ## Key Features
 
 - **Historical Depth**: Daily data from 1970 to present (2.5+ million observations)
 - **Comprehensive Coverage**: Notes and Bonds with complete price, yield, and duration data
 - **Accurate Runness**: Calculated from actual auction data, grouped by security type and standard auction terms
+- **GSW Model Prices**: Model-implied dirty/clean prices and yields from the Fed's Svensson yield curve
 - **Daily Time Series**: Bid/ask prices, yields, duration, returns, and accrued interest
 
 ## Data Sources
 
 - **Primary**: CRSP Treasury Database via WRDS (Wharton Research Data Services)
 - **Runness Enhancement**: TreasuryDirect.gov auction data merged by CUSIP and date
-- **Merge Strategy**: Left join CRSP data with auction-based runness calculations
+- **GSW Parameters**: Federal Reserve published Svensson parameters ([feds200628.csv](https://www.federalreserve.gov/data/yield-curve-tables/feds200628.csv))
+- **Merge Strategy**: Left join CRSP data with auction-based runness calculations, then append GSW model-implied prices
 
 ## Important Note on Data Lag
 
@@ -244,6 +246,30 @@ This dataset combines comprehensive U.S. Treasury daily price and yield data fro
 - Type: object (string)
 - Missing for securities without auction data match
 
+### GSW Model-Implied Prices
+
+#### gsw_price_dirty
+**GSW Model-Implied Dirty Price**
+- Present discounted value of all future cashflows using the Svensson spot rate curve
+- Calculated as: cashflows @ discount_factors (vectorized matrix multiplication)
+- NaN for: callable bonds, bills, TIPS, dates without Fed parameters, zero-coupon or non-positive maturity
+- Type: Float64
+
+#### gsw_price_clean
+**GSW Model-Implied Clean Price**
+- Dirty price minus accrued interest
+- Calculated as: gsw_price_dirty - tdaccint
+- Type: Float64
+
+#### gsw_ytm
+**GSW Model-Implied Yield to Maturity**
+- Bond-equivalent yield (semiannual compounding) that equates GSW dirty price to cashflows
+- Solved via Brent's root-finding method
+- Matches CRSP tdyld convention for comparability
+- Type: Float64
+
+**GSW coverage:** Noncallable bonds and notes (itype in [1, 2]) with positive coupon, positive days to maturity, and available Fed Svensson parameters for that date. All other securities receive NaN.
+
 ## Use Cases
 
 ### 1. Historical On-the-Run vs Off-the-Run Analysis
@@ -407,6 +433,9 @@ df = load_CRSP_treasury_consolidated(with_runness=False)
 | run | int64 | Runness indicator | Auction data |
 | auction_term | object | Standard auction term | Auction data |
 | auction_type | object | Auction security type | Auction data |
+| gsw_price_dirty | Float64 | GSW model-implied dirty price | Fed + Calculated |
+| gsw_price_clean | Float64 | GSW model-implied clean price | Fed + Calculated |
+| gsw_ytm | Float64 | GSW model-implied YTM | Fed + Calculated |
 
 ## Dataset Statistics
 
@@ -414,14 +443,17 @@ df = load_CRSP_treasury_consolidated(with_runness=False)
 - **Date Range**: 1970-01-02 to 2025-09-30
 - **Securities**: Notes (75%) and Bonds (25%)
 - **All securities are non-callable** (post-1970 data)
-- **Columns**: 26
+- **Columns**: 29
 
 ## References
 
 - CRSP Treasury Database Guide: https://www.crsp.org/products/documentation/crsp-treasury
 - TreasuryDirect API: https://treasurydirect.gov/TA_WS/securities/jqsearch
+- Gurkaynak, Refet S., Brian Sack, and Jonathan H. Wright. "The US Treasury yield curve: 1961 to the present." *Journal of Monetary Economics* 54, no. 8 (2007): 2291-2304.
+- Federal Reserve yield curve data: https://www.federalreserve.gov/data/yield-curve-tables/feds200628.csv
 - Runness calculation methodology: See [src/calc_treasury_run_status.py](../src/calc_treasury_run_status.py)
 - Merge methodology: See [src/merge_crsp_with_runness.py](../src/merge_crsp_with_runness.py)
+- GSW pricing methodology: See [src/calc_gsw_prices.py](../src/calc_gsw_prices.py)
 - Macaulay, F.R. (1938). "Some Theoretical Problems of Interest Rates, Bond Yields and Stock Prices in the United States Since 1856." National Bureau of Economic Research, pp. 44-53.
 
 ## Related Datasets
