@@ -317,7 +317,7 @@ def extract_params_from_fed_row(fed_row):
 # ---------------------------------------------------------------------------
 
 
-def calc_gsw_prices(data_dir=DATA_DIR):
+def calc_gsw_prices(data_dir=DATA_DIR, start_date=None):
     """Calculate GSW model-implied prices and YTM for all CRSP Treasury securities.
 
     Returns
@@ -360,6 +360,10 @@ def calc_gsw_prices(data_dir=DATA_DIR):
 
     # Process date by date
     unique_dates = sorted(priceable_df["caldt"].unique())
+    if start_date:
+        start_ts = pd.Timestamp(start_date)
+        unique_dates = [d for d in unique_dates if d >= start_ts]
+        print(f"  Filtering to dates >= {start_date}")
     print(f"  Processing {len(unique_dates):,} unique dates...")
 
     price_results = {}
@@ -436,7 +440,13 @@ def calc_gsw_prices(data_dir=DATA_DIR):
 
 
 if __name__ == "__main__":
-    df = calc_gsw_prices(data_dir=DATA_DIR)
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--start-date", default=None, help="Filter GSW pricing to dates >= this (YYYY-MM-DD)")
+    args = parser.parse_args()
+
+    df = calc_gsw_prices(data_dir=DATA_DIR, start_date=args.start_date)
 
     output_path = DATA_DIR / "crsp_treasury_daily.parquet"
     print(f"Saving to {output_path}...")
