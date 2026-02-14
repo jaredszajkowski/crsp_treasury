@@ -59,7 +59,7 @@ def merge_crsp_with_runness(data_dir=DATA_DIR):
     The merge strategy:
     1. Load CRSP consolidated data (all Treasury bonds and notes with full details)
     2. Load auction-based runness data (properly grouped by term and type)
-    3. Merge on cusip (CRSP: tcusip) and date (CRSP: caldt, auction: date)
+    3. Merge on cusip (CRSP: 8-char tcusip = auction cusip[:8]) and date (CRSP: caldt, auction: date)
     4. For unmatched securities, assign run=0 (conservative default)
 
     The auction-based runness calculation is superior because it groups securities by:
@@ -83,19 +83,22 @@ def merge_crsp_with_runness(data_dir=DATA_DIR):
     print(f"  Loaded {len(runness_df):,} records")
 
     # Prepare merge keys
-    # CRSP uses 'tcusip' and 'caldt'
-    # Auction data uses 'cusip' and 'date'
+    # CRSP uses 8-char 'tcusip'; auction/runness data uses 9-char 'cusip' (with check digit).
+    # Truncate to 8 chars for matching.
     print("Merging datasets...")
+    runness_merge = runness_df[["date", "cusip", "run", "term", "type"]].copy()
+    runness_merge["cusip_8"] = runness_merge["cusip"].str[:8]
+
     merged_df = crsp_df.merge(
-        runness_df[["date", "cusip", "run", "term", "type"]],
+        runness_merge[["date", "cusip_8", "run", "term", "type"]],
         left_on=["caldt", "tcusip"],
-        right_on=["date", "cusip"],
+        right_on=["date", "cusip_8"],
         how="left",
         suffixes=("", "_auction"),
     )
 
-    # Drop the duplicate date and cusip columns from the right side
-    merged_df = merged_df.drop(columns=["date", "cusip"], errors="ignore")
+    # Drop the temporary merge keys from the right side
+    merged_df = merged_df.drop(columns=["date", "cusip_8"], errors="ignore")
 
     # Rename the auction term and type to distinguish from CRSP itype
     merged_df = merged_df.rename(
