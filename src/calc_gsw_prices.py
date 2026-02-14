@@ -174,7 +174,8 @@ def build_cashflows_for_date(df_date):
         else:
             # Very close to maturity — only principal repayment
             bond_info[idx] = (None, row["tcouprt"], mat)
-            all_dates.add(mat)
+        # Always include maturity date so principal repayment column exists
+        all_dates.add(mat)
 
     if not all_dates:
         return pd.DataFrame()
