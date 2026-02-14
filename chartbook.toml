@@ -1,6 +1,6 @@
 [config]
 type = "pipeline"
-chartbase_format_version = "0.2.17"
+chartbook_format_version = "0.0.2"
 
 [site]
 title = "CRSP Treasury"
@@ -15,8 +15,7 @@ pipeline_name = "CRSP Treasury"
 pipeline_description = "Treasury Securities Data from CRSP"
 lead_pipeline_developer = "Jeremiah Bejarano"
 contributors = ["Jeremiah Bejarano"]
-software_modules_command = "module load anaconda3/3.11.4 TeXLive/2023 R/4.4.0 pandoc/3.1.6 gcc/14.1.0 stata/17"
-runs_on_grid_or_windows_or_other = "Windows/Linux/MacOS"
+runs_on = "Windows/Linux/MacOS"
 git_repo_URL = "https://repository.ofr.treas.gov/projects/RAC/repos/crsp_treasury/browse"
 README_file_path = "./README.md"
 

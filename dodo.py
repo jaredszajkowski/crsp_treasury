@@ -301,7 +301,7 @@ def task_generate_pipeline_site():
         ],
         "targets": ["docs/index.html"],
         "file_dep": [
-            "chartbase.toml",
+            "chartbook.toml",
             *notebook_files,
             OUTPUT_DIR / "treasury_returns_replication.html",
             OUTPUT_DIR / "treasury_cumulative_returns.html",
