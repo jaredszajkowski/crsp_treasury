@@ -16,6 +16,8 @@ OUTPUT_DIR = Path(config("OUTPUT_DIR"))
 BASE_DIR = Path(config("BASE_DIR"))
 OS_TYPE = "nix" if platform.system() != "Windows" else "windows"
 
+GSW_START_DATE = "2017-01-01"
+
 
 ## Helpers for handling Jupyter Notebook tasks
 os.environ["PYDEVD_DISABLE_FILE_VALIDATION"] = "1"
@@ -182,7 +184,7 @@ def task_merge_auction_with_runness():
 def task_calc_gsw_prices():
     """Calculate GSW model-implied prices and YTM."""
     return {
-        "actions": ["python ./src/calc_gsw_prices.py"],
+        "actions": [f"python ./src/calc_gsw_prices.py --start-date {GSW_START_DATE}"],
         "targets": [DATA_DIR / "CRSP_TFZ_with_runness.parquet"],
         "file_dep": [
             "./src/calc_gsw_prices.py",
