@@ -32,6 +32,7 @@ df_individual_bonds_returns.columns = ["unique_id", "ds", "y"]
 
 # Drop NaN values from y column
 df_individual_bonds_returns = df_individual_bonds_returns.dropna(subset=["y"])
+df_individual_bonds_returns.reset_index(drop=True, inplace=True)
 
 # Save the long format bond returns
 df_individual_bonds_returns.to_parquet(DATA_DIR / "ftsfr_treas_bond_returns.parquet")
@@ -46,5 +47,6 @@ df_portfolio_melted.columns = ["unique_id", "ds", "y"]
 
 # Drop NaN values from y column
 df_portfolio_melted = df_portfolio_melted.dropna(subset=["y"])
+df_portfolio_melted.reset_index(drop=True, inplace=True)
 
 df_portfolio_melted.to_parquet(DATA_DIR / "ftsfr_treas_bond_portfolio_returns.parquet")

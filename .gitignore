@@ -252,7 +252,8 @@ vignettes/*.pdf
 \.pytest_cache/
 ~$*
 
-.doit.db.db
+.doit.db
+.doit.db.*
 .doit-db.sqlite
 
 src/z_scratch_project_template.ipynb
