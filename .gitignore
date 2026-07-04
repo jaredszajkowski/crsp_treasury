@@ -271,3 +271,5 @@ models/ffnn/mytemp/lightning_logs/
 references/
 
 _references/
+
+.vscode/
