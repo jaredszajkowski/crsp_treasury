@@ -1,105 +1,170 @@
 # ---
 # jupyter:
 #   jupytext:
+#     formats: ipynb,py:percent
 #     text_representation:
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
 #       jupytext_version: 1.18.1
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: finm-32900-venv-p31211 (3.12.11.final.0)
 #     language: python
 #     name: python3
 # ---
 
 # %% [markdown]
-# # Cleaning Summary: Treasury Bond Returns
+# # Treasury Bond Returns (HKM Comparison)
 
 # %%
-import chartbook
-import pandas as pd
-
 import calc_treasury_bond_returns
-
-# import polars as pl
+import chartbook
+import matplotlib.pyplot as plt
+import pandas as pd
 import pull_he_kelly_manela
 
 BASE_DIR = chartbook.env.get_project_root()
 DATA_DIR = BASE_DIR / "_data"
 
 # %% [markdown]
-# # Treasury Bond Returns Summary
+# ## Data Overview
 #
-# By leveraging the TRACE dataset from openbondassetpricing.com, the FTSFR dataset ensures a robust foundation for analyzing treasury bond returns, adhering to established methodologies and incorporating comprehensive data cleaning procedures.
+# This notebook is the cleaning summary for the `crsp_treasury` pipeline, which builds U.S. Treasury return datasets and validates them against an external benchmark. The pipeline is orchestrated by `doit` (see `dodo.py`) and runs end to end as:
 #
-# ## Data Cleaning and Construction
+# 1. **Pull** the raw data from the sources listed below.
+# 2. **Calculate run status** — derive on-the-run/off-the-run rank per term and type per business day from the auction history.
+# 3. **Merge runness** onto the CRSP daily quotes and the auction records.
+# 4. **Price off the GSW curve** — compute Svensson model-implied clean prices and yields for each (non-callable) coupon bond.
+# 5. **Build the `ftsfr_*` datasets** — emit the long-format (`unique_id`, `ds`, `y`) bond-level and maturity-sorted portfolio Treasury return series.
 #
-# The treasury bond returns dataset is constructed using the following cleaning and processing steps:
+# This summary loads the maturity-sorted portfolio returns produced by that pipeline and compares them against the He-Kelly-Manela Treasury portfolios.
 #
-# ### 1. Bond Selection Criteria
+# Data sources:
 #
-# * **CUSIP Filtering**:
-#   * Only include bonds with CUSIPs starting with '91' (indicating Treasury securities)
-#   * This ensures we're only analyzing genuine Treasury bonds
+# * **CRSP US Treasury Database** (via WRDS) — daily quotes (bid/ask, accrued interest, promised yields, holding-period returns) and issue descriptions for all U.S. Treasury securities. This is the primary source for returns.
+# * **TreasuryDirect auction data** (`treasurydirect.gov` API) — auction statistics used to compute on-the-run/off-the-run status.
+# * **Federal Reserve GSW yield-curve parameters** (`feds200628.csv`) — daily Nelson-Siegel-Svensson (Gürkaynak-Sack-Wright) parameters used to compute model-implied Treasury prices and yields.
+# * **He-Kelly-Manela factors and test portfolios** — intermediary asset-pricing factors and maturity-sorted Treasury portfolios, used here as the comparison benchmark.
+
+# %% [markdown]
+# ### CRSP US Treasury Database — Daily Quotes
+
+# %%
+df_crsp_treas = pd.read_parquet(DATA_DIR / "CRSP_TFZ_DAILY.parquet")
+print(f"Shape: {df_crsp_treas.shape}")
+print(f"Columns: {df_crsp_treas.columns.tolist()}")
+display(df_crsp_treas)
+
+# %% [markdown]
+# ### CRSP US Treasury Database — Issue Descriptions
+
+# %%
+df_crsp_info = pd.read_parquet(DATA_DIR / "CRSP_TFZ_INFO.parquet")
+print(f"Shape: {df_crsp_info.shape}")
+print(f"Columns: {df_crsp_info.columns.tolist()}")
+display(df_crsp_info)
+
+# %% [markdown]
+# ### CRSP US Treasury Database — Consolidated
+
+# %%
+df_crsp_consolidated = pd.read_parquet(DATA_DIR / "CRSP_TFZ_consolidated.parquet")
+print(f"Shape: {df_crsp_consolidated.shape}")
+print(f"Columns: {df_crsp_consolidated.columns.tolist()}")
+display(df_crsp_consolidated)
+
+# %% [markdown]
+# ### TreasuryDirect Auction Statistics
+
+# %%
+df_auction_stats = pd.read_parquet(DATA_DIR / "treasury_auction_stats.parquet")
+print(f"Shape: {df_auction_stats.shape}")
+print(f"Columns: {df_auction_stats.columns.tolist()}")
+display(df_auction_stats)
+
+# %% [markdown]
+# ### Federal Reserve GSW Yield Curve Parameters
+
+# %%
+df_fed_yield_curve = pd.read_parquet(DATA_DIR / "fed_yield_curve_params.parquet")
+print(f"Shape: {df_fed_yield_curve.shape}")
+print(f"Columns: {df_fed_yield_curve.columns.tolist()}")
+display(df_fed_yield_curve)
+
+# %% [markdown]
+# ## Data Cleaning And Construction
 #
-# ### 2. Return Processing
+# The maturity-sorted portfolio returns are built from the consolidated CRSP
+# Treasury data by `calc_treasury_bond_returns.calc_returns`, using the
+# following steps:
 #
-# * **Return Conversion**:
-#   * Convert raw returns to decimal form by dividing by 100
-#   * This standardizes the return format for analysis
+# ### 1. Load Consolidated Data
 #
-# * **Return Filtering**:
-#   * Remove observations where returns exceed 50% (tr_return > 0.5)
-#   * This eliminates potential data errors or extreme outliers
+# * Load `CRSP_TFZ_consolidated.parquet` (`with_runness=False`) — daily,
+#   security-level observations keyed by `kytreasno` and quotation date
+#   (`caldt`), with unadjusted holding-period return `tdretnua`.
+#
+# ### 2. Daily → Monthly Compounding
+#
+# * **Month-end stamping**:
+#   * Map each `caldt` to its month-end date.
+#
+# * **Compound within the month**:
+#   * For each security and month, compound the daily unadjusted returns into a
+#     monthly return: `(1 + tdretnua).prod() - 1`.
+#   * Carry the last in-month value of the remaining columns (e.g.
+#     `days_to_maturity`) alongside the compounded return.
 #
 # ### 3. Maturity Grouping
 #
-# * **Maturity Bins**:
-#   * Create 10 maturity groups using 0.5-year intervals from 0 to 5 years
-#   * Bins: [0.0, 0.5, 1.0, ..., 5.0]
-#   * Each group represents a specific maturity range for analysis
+# * **Years to maturity**:
+#   * Convert `days_to_maturity` to years by dividing by 365.25.
 #
-# * **Group Assignment**:
-#   * Assign each bond to a maturity group based on its time to maturity (tau)
-#   * Drop observations with missing maturity information
-#   * Convert group labels to integers for easier analysis
+# * **Maturity bins**:
+#   * Create 10 maturity groups using 0.5-year intervals from 0 to 5 years.
+#   * Bins: `np.arange(0, 5.5, 0.5)` = [0.0, 0.5, 1.0, ..., 5.0], left-closed
+#     (`right=False`).
+#
+# * **Group assignment**:
+#   * Assign each bond-month to a maturity group via `pd.cut`.
+#   * Drop observations with a missing group (maturity outside 0-5 years) and
+#     cast the group labels to integers 1-10.
 #
 # ### 4. Portfolio Construction
 #
-# * **Return Aggregation**:
-#   * Group bonds by date and maturity group
-#   * Calculate mean returns for each group
-#   * This creates a time series of portfolio returns for each maturity group
+# * **Return aggregation**:
+#   * Drop observations with a missing compounded return.
+#   * Group by month-end date and maturity group and take the equal-weighted
+#     mean return within each group.
+#   * Pivot to wide format: one row per month, columns `1`-`10` (renamed from
+#     the maturity groups), with the date column renamed to `DATE`.
 #
-# ### 5. Data Quality Checks
-#
-# * **Missing Value Handling**:
-#   * Remove observations with missing returns
-#   * Remove observations with missing maturity group assignments
-#
-# * **Outlier Treatment**:
-#   * Extreme returns (>50%) are filtered out
-#   * This ensures the analysis focuses on normal market conditions
-#
-# This cleaning process ensures a high-quality dataset for analyzing Treasury bond returns across different maturity groups, facilitating comparison with the Kelly-Manzello data.
+# This produces a monthly time series of equal-weighted Treasury portfolio
+# returns for each maturity bucket, which are compared against the
+# He-Kelly-Manela maturity-sorted portfolios below.
+
+# %% [markdown]
+# ## HKM Treasury Bond Portfolios
 
 # %%
 hkm = pull_he_kelly_manela.load_he_kelly_manela_all(data_dir=DATA_DIR)
 treas_hkm = hkm.iloc[:, 34:44].copy()
 treas_hkm["yyyymm"] = hkm["yyyymm"]
-treas_hkm.head()
-treas_hkm.tail()
-treas_hkm.describe()
-treas_hkm.isnull().sum()
+print(f"Shape: {treas_hkm.shape}")
+print(f"Columns: {treas_hkm.columns.tolist()}")
+display(treas_hkm)
+
+# %% [markdown]
+# ## FTSFR Treasury Bond Portfolios
 
 # %%
 treas_bond_returns = calc_treasury_bond_returns.calc_returns(data_dir=DATA_DIR)
-
-# %%
-treas_bond_returns.describe()
+print(f"Shape: {treas_bond_returns.shape}")
+print(f"Columns: {treas_bond_returns.columns.tolist()}")
+display(treas_bond_returns)
 
 # %% [markdown]
-# ### Comparing FTSFR with He Kelly Manela
+# ## Comparing FTSFR With HKM
 
 # %%
 # Print initial data info
@@ -143,8 +208,6 @@ print("\nMerged DataFrame Head:")
 print(merged_df.head())
 
 # Create subplots for each pair of columns
-import matplotlib.pyplot as plt
-
 if not merged_df.empty:
     fig, axes = plt.subplots(5, 2, figsize=(15, 20))
     axes = axes.flatten()
@@ -210,7 +273,7 @@ for i in range(10):
 #   * **Portfolio 9**: 4 to 4.5 years
 #   * **Portfolio 10**: 4.5 to 5 years
 #
-# * **HKM Portfolios 1-10** (in red): Portfolios from **He, Kelly, and Manella (HKM)** using a similar 6-month maturity bucket structure for comparison.
+# * **HKM Portfolios 1-10** (in red): Portfolios from **He, Kelly, and Manela (HKM)** using a similar 6-month maturity bucket structure for comparison.
 #
 # ---
 #
