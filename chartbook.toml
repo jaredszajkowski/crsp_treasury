@@ -24,7 +24,7 @@ README_file_path = "./README.md"
 [notebooks.summary_treasury_bond_returns_ipynb]
 notebook_name = "summary_treasury_bond_returns_ipynb"
 notebook_description = "summary_treasury_bond_returns_ipynb"
-notebook_path = "_output/summary_treasury_bond_returns_ipynb.ipynb"
+notebook_path = "_output/_notebook_build/summary_treasury_bond_returns_ipynb.ipynb"
 is_publishable = true
 
 [charts]
