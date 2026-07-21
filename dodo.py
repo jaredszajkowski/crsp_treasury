@@ -193,16 +193,20 @@ def task_calc_gsw_prices():
 
 
 def task_test():
-    """Run GSW pricing sanity checks via pytest."""
+    """Run pytest suite: GSW pricing sanity checks and HKM replication checks."""
     return {
         "actions": [
-            "python -m pytest ./src/test_gsw_sanity.py -v --tb=short "
-            f"--junitxml=\"{OUTPUT_DIR / 'test_gsw_sanity.xml'}\"",
+            "python -m pytest ./src/test_gsw_sanity.py ./src/test_hkm_replication.py "
+            "-v --tb=short "
+            f"--junitxml=\"{OUTPUT_DIR / 'test_results.xml'}\"",
         ],
-        "targets": [OUTPUT_DIR / "test_gsw_sanity.xml"],
+        "targets": [OUTPUT_DIR / "test_results.xml"],
         "file_dep": [
             "./src/test_gsw_sanity.py",
+            "./src/test_hkm_replication.py",
             DATA_DIR / "crsp_treasury_daily.parquet",
+            DATA_DIR / "ftsfr_treas_bond_portfolio_returns.parquet",
+            DATA_DIR / "He_Kelly_Manela_Factors_And_Test_Assets_monthly.csv",
         ],
         "clean": True,
         "verbosity": 2,

@@ -36,11 +36,20 @@ dataframe_id = "ftsfr_treas_bond_portfolio_returns"
 path_to_html_chart = "./_output/treasury_returns_replication.html"
 path_to_excel_chart = ""
 topic_tags = ["treasury", "bonds", "returns", "replication"]
-past_publications = ["Fama and French (1993) - Common risk factors in the returns on stocks and bonds"]
+past_publications = [
+    "He, Kelly, and Manela (2017) - Intermediary Asset Pricing: New Evidence from Many Asset Classes",
+    "Fama and French (1993) - Common risk factors in the returns on stocks and bonds",
+]
 chart_docs_str = """
 ## Treasury Bond Portfolio Returns
 
 Monthly Treasury bond returns from CRSP, grouped by maturity bucket.
+
+These portfolios replicate the maturity-sorted U.S. Treasury bond test
+portfolios (US_bonds_01-US_bonds_10) of He, Kelly, and Manela (2017),
+"Intermediary Asset Pricing: New Evidence from Many Asset Classes."
+The replication is verified against the published HKM data by
+`src/test_hkm_replication.py`.
 
 ### Maturity Groups
 
@@ -58,11 +67,17 @@ dataframe_id = "ftsfr_treas_bond_portfolio_returns"
 path_to_html_chart = "./_output/treasury_cumulative_returns.html"
 path_to_excel_chart = ""
 topic_tags = ["treasury", "bonds", "cumulative returns", "replication"]
-past_publications = ["Fama and French (1993) - Common risk factors in the returns on stocks and bonds"]
+past_publications = [
+    "He, Kelly, and Manela (2017) - Intermediary Asset Pricing: New Evidence from Many Asset Classes",
+    "Fama and French (1993) - Common risk factors in the returns on stocks and bonds",
+]
 chart_docs_str = """
 ## Treasury Bond Portfolio Cumulative Returns
 
 Cumulative returns showing growth of $1 invested in Treasury bond portfolios from CRSP, grouped by maturity bucket.
+
+The underlying portfolios replicate the maturity-sorted Treasury test
+portfolios of He, Kelly, and Manela (2017).
 
 ### Maturity Groups
 
@@ -137,6 +152,13 @@ dataframe_docs_str = """
 ## Treasury Bond Portfolio Returns
 
 This dataset contains portfolio returns grouped by maturity buckets.
+
+It replicates the maturity-sorted U.S. Treasury bond test portfolios
+(US_bonds_01-US_bonds_10) of He, Kelly, and Manela (2017), "Intermediary
+Asset Pricing: New Evidence from Many Asset Classes," Journal of Financial
+Economics. The replication is verified month-by-month against the published
+HKM data by `src/test_hkm_replication.py` (correlations above 0.99 per
+portfolio in the overlapping sample).
 
 ### Columns
 

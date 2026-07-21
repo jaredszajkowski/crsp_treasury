@@ -29,15 +29,15 @@ DATA_DIR = BASE_DIR / "_data"
 # %% [markdown]
 # ## Data Overview
 #
-# This notebook is the cleaning summary for the `crsp_treasury` pipeline, which builds U.S. Treasury return datasets and validates them against an external benchmark. The pipeline is orchestrated by `doit` (see `dodo.py`) and runs end to end as:
+# This notebook is the cleaning summary for the `crsp_treasury` pipeline, which builds U.S. Treasury return datasets. The core deliverable **replicates the maturity-sorted U.S. Treasury bond test portfolios (`US_bonds_01`–`US_bonds_10`) of He, Kelly, and Manela (2017)**, "Intermediary Asset Pricing: New Evidence from Many Asset Classes." The pipeline is orchestrated by `doit` (see `dodo.py`) and runs end to end as:
 #
 # 1. **Pull** the raw data from the sources listed below.
 # 2. **Calculate run status** — derive on-the-run/off-the-run rank per term and type per business day from the auction history.
 # 3. **Merge runness** onto the CRSP daily quotes and the auction records.
-# 4. **Price off the GSW curve** — compute Svensson model-implied clean prices and yields for each (non-callable) coupon bond.
+# 4. **Price off the GSW curve** — compute Svensson model-implied clean prices and yields for each (non-callable) coupon bond. This is a bonus output for other downstream uses; it is not needed for the HKM replication.
 # 5. **Build the `ftsfr_*` datasets** — emit the long-format (`unique_id`, `ds`, `y`) bond-level and maturity-sorted portfolio Treasury return series.
 #
-# This summary loads the maturity-sorted portfolio returns produced by that pipeline and compares them against the He-Kelly-Manela Treasury portfolios.
+# This summary loads the maturity-sorted portfolio returns produced by that pipeline and compares them against the published He-Kelly-Manela Treasury portfolios — the replication target. The same comparison is enforced by automated tests in `src/test_hkm_replication.py`.
 #
 # Data sources:
 #
