@@ -24,21 +24,21 @@ os.environ["PYDEVD_DISABLE_FILE_VALIDATION"] = "1"
 # fmt: off
 ## Helper functions for automatic execution of Jupyter notebooks
 def jupyter_execute_notebook(notebook_path):
-    return f"jupyter nbconvert --execute --to notebook --ClearMetadataPreprocessor.enabled=True --inplace '{notebook_path}'"
+    return f'jupyter nbconvert --execute --to notebook --ClearMetadataPreprocessor.enabled=True --inplace "{notebook_path}"'
 def jupyter_to_html(notebook_path, output_dir=OUTPUT_DIR):
-    return f"jupyter nbconvert --to html --output-dir='{output_dir}' '{notebook_path}'"
+    return f'jupyter nbconvert --to html --output-dir="{output_dir}" "{notebook_path}"'
 def jupyter_to_md(notebook_path, output_dir=OUTPUT_DIR):
     """Requires jupytext"""
-    return f"jupytext --to markdown --output-dir='{output_dir}' '{notebook_path}'"
+    return f'jupytext --to markdown --output-dir="{output_dir}" "{notebook_path}"'
 def jupyter_to_python(notebook_path, notebook, build_dir):
     """Convert a notebook to a python script"""
-    return f"jupyter nbconvert --to python '{notebook_path}' --output _{notebook}.py --output-dir '{build_dir}'"
+    return f'jupyter nbconvert --to python "{notebook_path}" --output _{notebook}.py --output-dir "{build_dir}"'
 def jupyter_clear_output(notebook_path):
     """Clear the output of a notebook"""
-    return f"jupyter nbconvert --ClearOutputPreprocessor.enabled=True --ClearMetadataPreprocessor.enabled=True --inplace '{notebook_path}'"
+    return f'jupyter nbconvert --ClearOutputPreprocessor.enabled=True --ClearMetadataPreprocessor.enabled=True --inplace "{notebook_path}"'
 def jupytext_to_notebook(pyfile_path, notebook_path):
     """Convert a Python script to a Jupyter notebook using jupytext."""
-    return f"jupytext --to notebook --output '{notebook_path}' '{pyfile_path}'"
+    return f'jupytext --to notebook --output "{notebook_path}" "{pyfile_path}"'
 # fmt: on
 
 
@@ -197,7 +197,7 @@ def task_test():
     return {
         "actions": [
             "python -m pytest ./src/test_gsw_sanity.py -v --tb=short "
-            f"--junitxml='{OUTPUT_DIR / 'test_gsw_sanity.xml'}'",
+            f"--junitxml=\"{OUTPUT_DIR / 'test_gsw_sanity.xml'}\"",
         ],
         "targets": [OUTPUT_DIR / "test_gsw_sanity.xml"],
         "file_dep": [
@@ -230,7 +230,15 @@ def task_create_ftsfr_datasets():
 notebook_tasks = {
     "summary_treasury_bond_returns_ipynb": {
         "path": "./src/summary_treasury_bond_returns_ipynb.py",
-        "file_dep": ["./src/calc_treasury_bond_returns.py"],
+        "file_dep": [
+            "./src/calc_treasury_bond_returns.py",
+            DATA_DIR / "CRSP_TFZ_DAILY.parquet",
+            DATA_DIR / "CRSP_TFZ_INFO.parquet",
+            DATA_DIR / "CRSP_TFZ_consolidated.parquet",
+            DATA_DIR / "treasury_auction_stats.parquet",
+            DATA_DIR / "fed_yield_curve_params.parquet",
+            DATA_DIR / "He_Kelly_Manela_Factors_And_Test_Assets_monthly.csv",
+        ],
         "targets": [],
     },
 }

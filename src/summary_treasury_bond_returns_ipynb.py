@@ -8,7 +8,7 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.18.1
 #   kernelspec:
-#     display_name: finm-32900-venv-p31211 (3.12.11.final.0)
+#     display_name: Python 3
 #     language: python
 #     name: python3
 # ---
